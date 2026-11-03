@@ -374,3 +374,23 @@ small { display: block; opacity: .75; font-size: .8rem; }
 .fx.shard { position: fixed; width: 6px; height: 6px; z-index: 70; pointer-events: none; border: 1px solid #1b1530; animation: shard .8s steps(8) forwards; }
 @keyframes shard { 0% { transform: none; } 50% { transform: translate(calc(var(--dx) * .6), var(--dy)) rotate(180deg); } 100% { transform: translate(var(--dx), 40px) rotate(360deg); opacity: 0; } }
 .ball-anim.cover.wob { animation: none; }
+
+/* end credits */
+.credits { position: relative; height: 100%; overflow: hidden; }
+.credits .roll { position: absolute; left: 0; right: 0; top: 100%; padding: 0 18px; text-align: center; animation: roll 48s linear forwards; }
+.credits .roll h2 { margin: 30px 0 4px; }
+.credits .credit { display: flex; align-items: center; gap: 14px; margin: 26px 0; text-align: left; background: #fff8e7; border: 3px solid var(--ink); padding: 8px 10px; }
+.credits .credit.r { flex-direction: row-reverse; text-align: right; }
+.credits .credit img { width: 72px; height: 72px; flex: none; }
+.credits .credit b { display: block; font-family: "Press Start 2P", monospace; font-size: .7rem; margin-bottom: 4px; }
+.credits #skip { position: absolute; right: 10px; bottom: 10px; z-index: 2; }
+@keyframes roll { to { transform: translateY(calc(-100% - 100vh)); } }
+
+/* trophies: one per difficulty finished, kept across new games */
+.trophies { display: flex; gap: 10px; justify-content: center; margin: 8px 0; }
+.trophy { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 54px; padding: 6px 4px; border: 2px solid #1b1530; border-radius: 6px; background: rgba(255,255,255,.35); opacity: .55; }
+.trophy.won { opacity: 1; background: #fde68a; }
+.trophy .pix { width: 28px; height: 28px; }
+.trophy i { font-style: normal; font-size: 20px; line-height: 28px; }
+.trophy small { font-size: 9px; }
+.intro .btn small { display: block; font-size: 9px; opacity: .8; margin-top: 2px; }

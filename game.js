@@ -142,6 +142,62 @@ function load() {
   try { const raw = localStorage.getItem(SAVE_KEY); return raw ? JSON.parse(raw) : null; } catch (e) { return null; }
 }
 
+// ---------- difficulty & trophies ----------
+// The first run is always Easy. Finishing a mode earns its trophy and unlocks the next.
+// Trophies live in their own save slot so they survive starting a new game.
+const DIFFS = {
+  easy:   { name: "Easy",   lv: -2, xp: 1.5,  trophy: "🥉", blurb: "Foes 2 levels lower, extra XP." },
+  normal: { name: "Normal", lv: 0,  xp: 1,    trophy: "🥈", blurb: "The game as designed." },
+  hard:   { name: "Hard",   lv: 3,  xp: 0.85, trophy: "🥇", blurb: "Foes 3 levels higher, less XP." },
+};
+const DIFF_ORDER = ["easy", "normal", "hard"];
+const TROPHY_KEY = "pocketsam-trophies";
+function trophies() { try { return JSON.parse(localStorage.getItem(TROPHY_KEY)) || {}; } catch (e) { return {}; } }
+function unlockedDiffs() {
+  const t = trophies();
+  return DIFF_ORDER.filter((d, i) => i === 0 || t[DIFF_ORDER[i - 1]]);
+}
+const diff = () => DIFFS[(S && S.difficulty) || "normal"] || DIFFS.normal;
+function setDifficulty(d) {
+  S.difficulty = d;
+  // The trophy goes to the easiest mode used during the run.
+  const floor = S.diffFloor || d;
+  S.diffFloor = DIFF_ORDER.indexOf(d) < DIFF_ORDER.indexOf(floor) ? d : floor;
+  save();
+}
+function awardTrophy() {
+  const d = S.diffFloor || S.difficulty || "normal";
+  const t = trophies(), fresh = !t[d];
+  t[d] = t[d] || new Date().toISOString().slice(0, 10);
+  try { localStorage.setItem(TROPHY_KEY, JSON.stringify(t)); } catch (e) {}
+  return { d, fresh, next: DIFF_ORDER[DIFF_ORDER.indexOf(d) + 1] };
+}
+const trophyShelf = () => {
+  const t = trophies();
+  return `<div class="trophies">${DIFF_ORDER.map(d => `<span class="trophy ${t[d] ? "won" : ""}" title="${DIFFS[d].name}">${t[d] ? pixEmoji(DIFFS[d].trophy) : "<i>?</i>"}<small>${DIFFS[d].name}</small></span>`).join("")}</div>`;
+};
+// Foes in battle are shifted by the difficulty's level offset.
+function scaleFoe(m) {
+  const L = Math.max(2, Math.min(50, m.level + diff().lv));
+  if (L === m.level) return m;
+  m.level = L; m.moves = knownMoves(m.sp, L); m.hp = stats(m).hp;
+  return m;
+}
+function difficultyScreen(next) {
+  const ds = unlockedDiffs();
+  if (ds.length === 1) { setDifficulty(ds[0]); return next(); }
+  const t = trophies();
+  screen(`
+    <div class="intro">
+      <h2>Pick a difficulty</h2>
+      ${trophyShelf()}
+      ${DIFF_ORDER.map(d => ds.includes(d)
+        ? `<button class="btn big" data-d="${d}">${DIFFS[d].name}${t[d] ? " " + DIFFS[d].trophy : ""}<br><small>${DIFFS[d].blurb}</small></button>`
+        : `<button class="btn big ghost" disabled>🔒 ${DIFFS[d].name}<br><small>Finish ${DIFFS[DIFF_ORDER[DIFF_ORDER.indexOf(d) - 1]].name} to unlock</small></button>`).join("")}
+    </div>`, "bg-title");
+  on("[data-d]", el => { setDifficulty(el.dataset.d); next(); });
+}
+
 // ---------- monsters ----------
 const xpNeed = L => Math.floor(1.2 * L * L) + 5;
 function knownMoves(sp, level) {
@@ -270,13 +326,14 @@ function titleScreen() {
       <p class="sub">${esc(CONFIG.subtitle)}</p>
       ${existing && existing.started ? `<button class="btn big" id="cont">▶ Continue</button>` : ""}
       <button class="btn big ${existing && existing.started ? "ghost" : ""}" id="new">✨ New game</button>
+      ${Object.keys(trophies()).length ? trophyShelf() : ""}
       <p class="tiny">Made for ${esc(CONFIG.hero)} by ${esc(CONFIG.from)}</p>
       <p class="tiny">Your game saves automatically on this phone. Open it in the same browser each time to keep your progress.</p>
     </div>`, "bg-title");
-  on("#cont", () => { S = Object.assign(newState(), existing); WORLD.resume(); });
+  on("#cont", () => { S = Object.assign(newState(), existing); if (!S.difficulty) S.difficulty = S.diffFloor = "normal"; WORLD.resume(); });
   on("#new", () => {
     if (existing && existing.started && !confirm("Start over? Your saved game will be replaced.")) return;
-    S = newState(); introScreen();
+    S = newState(); difficultyScreen(introScreen);
   });
 }
 
@@ -470,7 +527,7 @@ let B = null;
 function startBattle(opts) {
   B = {
     wild: opts.wild, trainer: opts.trainer || null,
-    foes: opts.team, fi: 0,
+    foes: opts.team.map(scaleFoe), fi: 0,
     pi: S.team.findIndex(m => m.hp > 0),
     stage: { p: { atk: 0, def: 0, spd: 0 }, f: { atk: 0, def: 0, spd: 0 } },
     busy: true, participants: new Set(),
@@ -854,6 +911,7 @@ async function tryCatch() {
 }
 
 async function awardXp(total) {
+  total = Math.max(1, Math.round(total * diff().xp));
   const ids = [...B.participants];
   let first = true;
   for (const m of S.team) {
@@ -954,7 +1012,52 @@ function evolve(m, into) {
 }
 
 // ---------- ending ----------
+// ---------- credits: everyone rolls past as their pixel portrait ----------
+const CREDITS = [
+  { look: "sam", name: "Sam (Mr Chicken)", line: "The birthday boy. 36 today. Still hates wall balls." },
+  { look: "chloe", name: "Chloe", line: "Calls him Mr Chicken. Knows exactly why." },
+  { sp: "winnieeee", name: "Winnie", line: "Very good girl. Very loud girl." },
+  { sp: "lucius", name: "Lucy", line: "Fluffy. Fiery. Sleeps on the warm laptop." },
+  { sp: "spookus", name: "Spooks", line: "Professional play-fighter." },
+  { sp: "marigoldus", name: "Marie", line: "Professional play-fight referee." },
+  { look: "freddie", name: "Freddie", line: "Shall we go for a run sometime soon?" },
+  { look: "georgina", name: "Georgina", line: "Want to see what I'm knitting?" },
+  { sp: "ralph", name: "Ralph", line: "Sorry about the floor." },
+  { sp: "bonnie", name: "Bonnie", line: "Went mental for no reason. Twice." },
+  { look: "jaz", name: "Jaz", line: "Witchy powers, perfect fringe." },
+  { look: "kim", name: "Kim", line: "Off duty. Mostly." },
+  { sp: "chap", name: "Chap", line: "Ate the credits. Then the cake." },
+  { sp: "milo", name: "Milo & Lila", line: "Old, fluffy and unbothered." },
+  { sp: "gerty", name: "Gerty", line: "Snorts in 4/4 time." },
+  { sp: "oswald", name: "Oswald", line: "No fur. All attitude." },
+  { sp: "jkrabbit", name: "Name Unknown", line: "Still won't say." },
+  { look: "brendan", name: "Brendan & Davide", line: "Gloomhaven, scenario three, attempt fifteen." },
+  { look: "egg", name: "Coach Egg", line: "50 wall balls. For time. See you at 6am." },
+  { look: "prof", name: "Prof. Doverow", line: "Gave you a name. You're welcome." },
+  { look: "tina", name: "Tina", line: "Invoice to follow." },
+  { sp: "severnboar", name: "The Severn Boar", line: "Only seen once. Five stars." },
+];
+function creditsScreen(done) {
+  const img = c => c.look ? WORLD.look(c.look, "down").toDataURL() : pixURL(c.sp, 0);
+  screen(`
+    <div class="credits" id="credits">
+      <div class="roll">
+        <h2>POCKET SAM</h2><p class="tiny">Mr Chicken's Birthday Quest</p>
+        ${CREDITS.map((c, i) => `<div class="credit ${i % 2 ? "r" : ""}"><img class="pix" src="${img(c)}" alt=""><div><b>${esc(c.name)}</b><small>${esc(c.line)}</small></div></div>`).join("")}
+        <p class="tiny">Made with love by Freddie & Georgina<br>for Sam's 36th birthday</p>
+        <h2>THE END</h2>
+      </div>
+      <button class="btn ghost" id="skip">Skip ▶</button>
+    </div>`, "bg-party");
+  music("birthday");
+  let fin = false; const end = () => { if (fin) return; fin = true; done(); };
+  const roll = document.querySelector("#credits .roll");
+  roll.addEventListener("animationend", () => setTimeout(end, 1200 * SPEED));
+  on("#skip", end);
+}
 function endingScreen() {
+  if (!endingScreen.rolled) { endingScreen.rolled = true; return creditsScreen(() => endingScreen()); }
+  const won = endingScreen.won || (endingScreen.won = awardTrophy());
   const confetti = Array.from({ length: 40 }, () => {
     const e = pick(["🎉", "🎂", "🎈", "✨", "🥳", "🎁"]);
     return `<span class="confetto" style="left:${rnd(0, 100)}%;animation-delay:${(Math.random() * 4).toFixed(2)}s;animation-duration:${(3 + Math.random() * 3).toFixed(2)}s">${e}</span>`;
@@ -969,6 +1072,8 @@ function endingScreen() {
       <div class="dialog">${esc(CONFIG.birthdayMessage)}</div>
       <div class="team-row">${S.team.map(m => sprite(m.sp, "sm")).join("")}</div>
       <p class="tiny">Collected ${Object.keys(S.caught).length}/${COLLECTABLE.length} critters</p>
+      <div class="dialog">${won.fresh ? `New trophy: ${DIFFS[won.d].name} mode ${DIFFS[won.d].trophy}` : `Finished on ${DIFFS[won.d].name} again!`}${won.fresh && won.next ? `<br>${DIFFS[won.next].name} mode is now unlocked for your next game.` : ""}</div>
+      ${trophyShelf()}
       <button class="btn big" id="keep">Keep exploring</button>
     </div>`, "bg-party");
   music("fanfare");
@@ -1074,7 +1179,7 @@ document.addEventListener("keydown", e => {
 // ---------- helpers for world.js ----------
 window.PS = {
   S: () => S, save, music, sfx, beep, toggleMute, isMuted: () => muted, screen, esc, fill, heroName,
-  healAll, makeMon, startBattle, teamScreen, boxScreen, dexScreen, journalScreen, mapScreen, endingScreen, evolve, talk, giveStarters, pixURL,
+  healAll, makeMon, startBattle, unlockedDiffs, setDifficulty, DIFFS, trophies, teamScreen, boxScreen, dexScreen, journalScreen, mapScreen, endingScreen, evolve, talk, giveStarters, pixURL,
   alive: () => alive(S.team),
 };
 
