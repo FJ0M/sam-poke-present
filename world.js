@@ -12,7 +12,7 @@ const S = () => window.PS.S();
 
 // ---------- tile painting ----------
 // Each tile is painted once onto a 16x16 canvas and cached.
-const SOLID = new Set("THRwSVM~#fWvkKtbpqdFCon|YajiZEQGUhlmNIJA12345".split(""));
+const SOLID = new Set("THRwSVM~#fWvkKtbpqdFCon|YajiZEQGUhlmNIJA1234567".split(""));
 const ENC = { ",": "grass", "e": "grass", "r": "reeds" };
 const TILE_CACHE = {};
 const pick = a => a[Math.floor(Math.random() * a.length)];
@@ -79,6 +79,9 @@ const PAINT = {
   "q": x => { PAINT.W(x); px(x, "#4b5563", 0, 6, 16, 2); for (const X of [1, 6, 11]) { px(x, "#1f2937", X, 8, 4, 5); px(x, "#6b7280", X + 1, 7, 2, 1); } },
   "d": x => { PAINT["_"](x); px(x, "#78350f", 0, 3, 16, 10); px(x, "#92400e", 1, 4, 14, 8); px(x, "#f1f5f9", 3, 5, 5, 4); px(x, "#facc15", 10, 5, 3, 3); },
   "F": x => { PAINT.W(x); px(x, "#6b7280", 2, 1, 12, 14); for (const y of [3, 8]) { px(x, "#9ca3af", 3, y, 10, 4); px(x, "#1f2937", 7, y + 1, 2, 1); } },
+  // Rough Hands: dark green, wood and black
+  "6": x => { px(x, "#14532d", 0, 0, 16, 16); px(x, "#166534", 0, 0, 16, 2); for (const X of [3, 8, 13]) px(x, "#0f3d22", X, 2, 1, 10); px(x, "#7c4a22", 0, 12, 16, 4); px(x, "#9a5d2c", 0, 12, 16, 1); px(x, "#111827", 0, 15, 16, 1); },
+  "7": x => { PAINT["6"](x); px(x, "#111827", 0, 6, 16, 9); px(x, "#a0672f", 0, 5, 16, 2); px(x, "#c08040", 0, 5, 16, 1); px(x, "#d1d5db", 3, 0, 7, 5); px(x, "#111827", 4, 1, 5, 2); px(x, "#f8fafc", 11, 2, 3, 3); px(x, "#7c4a22", 12, 3, 1, 1); },
   "C": x => { PAINT.W(x); px(x, "#78350f", 0, 6, 16, 9); px(x, "#a16207", 0, 6, 16, 2); px(x, "#9ca3af", 3, 1, 6, 5); px(x, "#1b1530", 4, 2, 4, 2); px(x, "#fff", 11, 3, 3, 3); },
   // railway, stations, stone buildings, bridges
   "|": x => { px(x, "#8a8178", 0, 0, 16, 16); const r = seeded(11); for (let i = 0; i < 8; i++) px(x, "#6f665e", Math.floor(r() * 15), Math.floor(r() * 15), 1, 1);
@@ -188,7 +191,7 @@ const LOOKS = {
   chloe:    { hair: "#7c2d12", skin: "#f1c27d", shirt: "#ec4899", shirt2: "#be185d", legs: "#1f2937", long: true },
   jaz:      { hair: "#0b0b10", skin: "#e8c4a0", shirt: "#1f1b24", jacket: "#111018", jacket2: "#000000", legs: "#111018", shoes: "#3b0764", long: true, fringe: true, aura: "#a855f7" },
   kim:      { hair: "#78350f", skin: "#f1c27d", shirt: "#f8fafc", jacket: "#1e2a4a", jacket2: "#111a33", legs: "#111a33", shoes: "#0b0b10", police: true },
-  egg:      { hair: "#f1c27d", skin: "#f1c27d", shirt: "#facc15", shirt2: "#ca8a04", legs: "#1f2937", shoes: "#f1f5f9" },
+  egg:      { egghead: true, hair: "#8a6a4a", skin: "#f3e3c3", shirt: "#facc15", shirt2: "#ca8a04", legs: "#1f2937", shoes: "#f1f5f9" },
   brendan:  { hair: "#7c2d12", skin: "#f1c27d", shirt: "#065f46", shirt2: "#064e3b", legs: "#1f2937", beard: true },
   davide:   { hair: "#1f2937", skin: "#d6a06b", shirt: "#7c3aed", shirt2: "#5b21b6", legs: "#374151", glasses: true },
   surfer:   { hair: "#fde047", skin: "#e0ac69", shirt: "#0f172a", jacket: "#0f172a", jacket2: "#1e293b", legs: "#0f172a", shoes: "#0f172a", long: true },
@@ -205,6 +208,7 @@ const ANIMAL_LOOKS = { frenchie: "ralph", frenchie2: "bonnie", winnie: "winnie",
   milo: "milo", chap: "chap", lila: "lila", gerty: "gerty", oswald: "oswald", bunny: "jkrabbit", roo: "boxroo",
   catluce: "luce", catspook: "spook", catmarie: "marie", koala: "koala" };
 const SPR_CACHE = {};
+const LOGO = new Image(); LOGO.src = "rh-logo.png";
 function outline(c) {
   const x = c.getContext("2d"), d = x.getImageData(0, 0, c.width, c.height), a = d.data, W = c.width, H = c.height;
   const solid = i => a[i * 4 + 3] > 100, out = [];
@@ -262,11 +266,21 @@ function personSprite(look, dir, step, bike) {
   // head
   px(x, L.skin, 4, Y(2), 8, 6); px(x, skin2, 4, Y(7), 8, 1);
   if (d !== "left") { px(x, L.skin, 3, Y(4), 1, 2); px(x, L.skin, 12, Y(4), 1, 2); }
+  // egg-shaped head with stubble (Coach Egg)
+  if (L.egghead) {
+    const sk2 = shade(L.skin, 0.9), stub = "#8a6a4a";
+    px(x, L.skin, 6, Y(-1), 4, 1); px(x, L.skin, 5, Y(0), 6, 1); px(x, L.skin, 4, Y(1), 8, 1);
+    px(x, shade(L.skin, 1.12), 6, Y(0), 2, 1); px(x, shade(L.skin, 1.12), 5, Y(1), 1, 1); px(x, sk2, 4, Y(7), 8, 1); px(x, L.skin, 5, Y(8), 6, 1);
+    for (const [X, Yy] of [[6, 0], [8, 0], [10, 1], [5, 1], [7, 1], [9, 1], [4, 2], [11, 2], [6, 2], [8, 2], [10, 2], [3, 3], [12, 3]]) px(x, stub, X, Y(Yy));
+    if (d !== "up") for (const [X, Yy] of [[4, 6], [11, 6], [5, 7], [7, 7], [9, 7], [10, 7], [6, 8], [8, 8], [4, 7], [11, 7]]) px(x, stub, d === "left" ? X - 1 : X, Y(Yy));
+    else for (const [X, Yy] of [[5, 4], [7, 3], [9, 4], [10, 5], [6, 5], [8, 6]]) px(x, stub, X, Y(Yy));
+  } else {
   // hair
   px(x, L.hair, 4, Y(1), 8, 2); px(x, L.hair, 3, Y(2), 1, 2); px(x, L.hair, 12, Y(2), 1, 2); px(x, shade(L.hair, 1.3), 6, Y(1), 3, 1);
   if (L.long) { px(x, L.hair, 3, Y(3), 1, 6); px(x, L.hair, 12, Y(3), 1, 6); px(x, hair2, 3, Y(8), 1, 1); px(x, hair2, 12, Y(8), 1, 1); }
   if (d === "up") { px(x, L.hair, 4, Y(2), 8, 5); px(x, hair2, 4, Y(6), 8, 1); }
   else if (d === "left") { px(x, L.hair, 8, Y(2), 4, 4); px(x, hair2, 10, Y(5), 2, 1); px(x, L.skin, 3, Y(5), 1, 1); px(x, skin2, 8, Y(4), 1, 2); }
+  }
   // hat (beanie): sits over the hair, with a turned-up cuff
   if (L.hat) {
     px(x, L.hat, 5, Y(0), 6, 1); px(x, L.hat, 4, Y(1), 8, 2); px(x, L.hat2, 3, Y(3), 10, 1);
@@ -719,6 +733,9 @@ function draw() {
       : tileImg(t, (t === "~" || t === "B") ? ((frame + x + y) & 3) : (t === "r" || t === "," || t === "e") ? ((frame >> 1) + x) & 1 : 0, v);
     ctx.drawImage(img, x * TS - camX + offX, y * TS - camY + offY);
   }
+  // painted shop signs
+  for (const sg of map.signs || []) { if (!LOGO.complete || !LOGO.naturalWidth) break;
+    ctx.drawImage(LOGO, Math.round(sg.x * TS - camX + offX), Math.round(sg.y * TS - camY + offY), Math.round(sg.w * TS), Math.round(sg.w * TS * LOGO.naturalHeight / LOGO.naturalWidth)); }
   // characters, sorted by y
   const list = npcs.filter(n => n.visible).map((n, i) => ({ img: charSprite(n.look, n.dir, n.moving ? n.step : (ANIMAL_LOOKS[n.look] ? (tick + i) & 1 : 0)), x: n.fx + (n.playfight ? ((frame & 1) ? 0.08 : -0.08) * (i % 2 ? 1 : -1) : 0), y: n.fy - (n.playfight && (frame & 2) ? 0.1 : 0), alert: n.alert,
     aura: (LOOKS[n.look] || {}).aura,
