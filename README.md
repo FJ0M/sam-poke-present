@@ -18,10 +18,20 @@ It plays in any phone browser, with Game Boy style controls at the bottom of the
 - **D-pad**: walk.
 - **A**: talk or interact.
 - **B**: hold to run, or go back.
-- **START**: menu (team, Samdex, e-bike, save, sound).
+- **START**: menu (team, dex, journal, map, e-bike, save, sound).
 - **SELECT**: toggles sound.
 
 On a keyboard use the arrows, Z or Enter for A, X for B, and S for Start.
+
+## Story
+
+1. Sam wakes up on his 36th birthday. A letter arrives: no cake until Tina is sorted.
+2. Battle Jaz & Kim, then Chloe (Winnie joins and evolves into WINNIEEEE).
+3. Get to Stroud by train or on foot through Ebley.
+4. Find Freddie & Georgina at Rough Hands in the Five Valleys shopping centre.
+5. Beat Tina in her office on the High Street, then party at the bungalow.
+
+Critters heal at cafés (Rough Hands, The Stewed Pot in Stonehouse, The Lukewarm Kettle in Ebley), friends' kettles, or Sam's bed.
 
 ## Getting around
 
