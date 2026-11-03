@@ -1,198 +1,244 @@
 // ============================================================
 //  CONTENT — everything personal about Sam lives in this file.
-//  Swap names, jokes, places and creatures here; game.js runs it.
+//  Story, creatures, moves, types. Maps live in maps.js.
 // ============================================================
 
 const CONFIG = {
-  title: "SAMSTERS",
+  title: "POCKET SAM",
   subtitle: "Mr Chicken's Birthday Quest",
   hero: "Sam",
-  hero_emoji: "🐔",
   from: "Freddie",
-  age: "",                       // e.g. "35" — shown big on the ending screen
+  age: "",                       // e.g. "35", shown big on the ending screen
   ballName: "Tea Ball",
   ballEmoji: "🍵",
   dexName: "Samdex",
-  healPlace: "the coffee shop",
-  healEmoji: "☕",
-  narrator: "Chloe",
-  narratorEmoji: "👩",
+  creatureWord: "critter",
+  professor: "Prof. Doverow",
   forcedName: "Mr Chicken",
-  nameIntro: [
-    "Chloe: Hello there! Welcome to the world of SAMSTERS!",
-    "Chloe: This world is full of creatures called Samsters. Some are cats. Some are dogs. One is a croissant.",
-    "Chloe: But first, tell me a little about yourself.",
+  profIntro: [
+    "Prof. Doverow: Well hello there! Welcome to the Five Valleys!",
+    "Prof. Doverow: My name is Doverow. People round here call me the Critter Professor. I live up on the hill, mostly.",
+    "Prof. Doverow: From the canal at Stonehouse to the commons above Stroud, these valleys are full of creatures called CRITTERS.",
+    "Prof. Doverow: Some are cats. Some are birds. One is, I'm told, a wheel of Double Gloucester.",
+    "Prof. Doverow: Now then. Tell me a little about yourself.",
   ],
   nameReaction: [
-    "Chloe: MR CHICKEN! What a lovely name.",
-    "Chloe: ...Oh, don't look at me like that. It's what everyone calls you.",
-    "Chloe: Right then, {name}. Your very own Samster adventure is about to begin!",
+    "Prof. Doverow: ...",
+    "Prof. Doverow: Hmm. No, I don't think that's right.",
+    "Prof. Doverow: Your name is MR CHICKEN.",
+    "Prof. Doverow: Your wife told me. Everyone calls you that.",
+    "Prof. Doverow: Right then, MR CHICKEN! Your very own critter adventure is about to begin!",
   ],
-  intro: [
-    "It was {name}'s birthday, and he woke up ready for a big day of tea, running and cake.",
-    "Then the post arrived. A letter from Tina, the coffee shop's accountant...",
-    "\"Dear Sam, small VAT mix-up. You now owe A MASSIVE TAX BILL. Happy birthday! Tina.\"",
-    "Tina is hiding in her office in Stroud. Only a true Samster trainer can get from Stonehouse to her door and make her fix it.",
-    "Luckily, Luce, Spook and Marie are ready to help. Who will lead the way?"
+  wakeUp: [
+    "...",
+    "It's your birthday! You've dozed off on the sofa again.",
+    "Luce, Spook and Marie are staring at you. It's probably dinner time.",
   ],
+  letter: [
+    "There's a letter on the doormat. It's from Tina, the coffee shop's accountant...",
+    "\"Dear Sam. Small VAT mix-up. You now owe A MASSIVE TAX BILL. Happy birthday! Tina.\"",
+    "Tina's office is up in Stroud. Time to go and have a word, with the cats.",
+  ],
+  catsJoin: "Luce, Spook and Marie joined your team!",
   birthdayMessage:
     "Happy birthday Sam! You defeated Tina, fixed the VAT and saved the coffee shop. Here's to another year of ultras, WODs and way too many cups of tea. Love, Freddie & Georgina (and Ralph and Bonnie, sorry) 🎉",
 };
 
-// Type chart: each type beats the one listed in `beats`.
-// Brew fuels you through Gains, Gains outmuscle Cardio, Cardio runs off the Brew.
+// Type chart: strong = deals double damage to these; weak = deals half to these.
 const TYPES = {
-  brew:   { name: "Brew",   emoji: "☕", color: "#c0814a", beats: "gains"  },
-  gains:  { name: "Gains",  emoji: "💪", color: "#ef4444", beats: "cardio" },
-  cardio: { name: "Cardio", emoji: "🏃", color: "#22b8cf", beats: "brew"   },
-  cluck:  { name: "Cluck",  emoji: "🐔", color: "#a58cff", beats: null     },
+  normal:   { name: "Normal",   color: "#a8a29e", strong: [],                   weak: ["ghost"] },
+  fire:     { name: "Fire",     color: "#f97316", strong: ["grass"],            weak: ["fire", "water", "dragon"] },
+  water:    { name: "Water",    color: "#3b82f6", strong: ["fire"],             weak: ["water", "grass", "dragon"] },
+  grass:    { name: "Grass",    color: "#22c55e", strong: ["water"],            weak: ["fire", "grass", "flying", "dragon"] },
+  flying:   { name: "Flying",   color: "#7dd3fc", strong: ["grass", "fighting"], weak: [] },
+  fighting: { name: "Fighting", color: "#dc2626", strong: ["normal", "dark"],   weak: ["flying", "psychic", "ghost"] },
+  psychic:  { name: "Psychic",  color: "#ec4899", strong: ["fighting"],         weak: ["psychic", "dark"] },
+  dark:     { name: "Dark",     color: "#4b3f5c", strong: ["psychic", "ghost"], weak: ["fighting", "dark"] },
+  ghost:    { name: "Ghost",    color: "#7c3aed", strong: ["ghost", "psychic"], weak: ["normal", "dark"] },
+  dragon:   { name: "Dragon",   color: "#6366f1", strong: ["dragon"],           weak: [] },
 };
 
 // effect: heal | atkUp | defDown | spdUp
+const M = (name, type, power, acc = 100, effect) => ({ name, type, power, acc, effect });
 const MOVES = {
-  // cluck (neutral)
-  "peck":           { name: "Peck",             type: "cluck",  power: 40, acc: 100 },
-  "zoomies":        { name: "Zoomies",          type: "cluck",  power: 60, acc: 95 },
-  "flap-attack":    { name: "Flap Attack",      type: "cluck",  power: 75, acc: 90 },
-  "chicken-dance":  { name: "Chicken Dance",    type: "cluck",  power: 0,  acc: 100, effect: "atkUp" },
-  "cat-nap":        { name: "Cat Nap",          type: "cluck",  power: 0,  acc: 100, effect: "heal" },
-  "slobber":        { name: "Slobber",          type: "cluck",  power: 0,  acc: 95,  effect: "defDown" },
-  "snore":          { name: "Snore",            type: "cluck",  power: 0,  acc: 100, effect: "heal" },
-  "judgy-stare":    { name: "Judgy Stare",      type: "cluck",  power: 0,  acc: 95,  effect: "defDown" },
-  // brew
-  "hot-sip":        { name: "Hot Sip",          type: "brew",   power: 45, acc: 100 },
-  "espresso-shot":  { name: "Espresso Shot",    type: "brew",   power: 65, acc: 95 },
-  "builders-brew":  { name: "Builder's Brew",   type: "brew",   power: 90, acc: 85 },
-  "tea-break":      { name: "Tea Break",        type: "brew",   power: 0,  acc: 100, effect: "heal" },
-  // gains
-  "wall-ball":      { name: "Wall Ball",        type: "gains",  power: 45, acc: 100 },
-  "kettlebell-swing": { name: "Kettlebell Swing", type: "gains", power: 65, acc: 95 },
-  "deadlift":       { name: "Deadlift",         type: "gains",  power: 90, acc: 85 },
-  "pump-up":        { name: "Pump Up",          type: "gains",  power: 0,  acc: 100, effect: "atkUp" },
-  // cardio
-  "jog-on":         { name: "Jog On",           type: "cardio", power: 45, acc: 100 },
-  "hill-sprint":    { name: "Hill Sprint",      type: "cardio", power: 65, acc: 95 },
-  "ultra-marathon": { name: "Ultra Marathon",   type: "cardio", power: 90, acc: 85 },
-  "second-wind":    { name: "Second Wind",      type: "cardio", power: 0,  acc: 100, effect: "spdUp" },
-  // boss
-  "too-many-candles": { name: "Too Many Candles", type: "brew",  power: 80, acc: 90 },
-  "midlife-crisis": { name: "Midlife Crisis",   type: "cluck",  power: 85, acc: 90 },
-  "vat-bill":       { name: "Massive VAT Bill", type: "cluck",  power: 95, acc: 85 },
-  "late-fee":       { name: "Late Filing Fee",  type: "brew",   power: 70, acc: 95 },
-  "audit":          { name: "Surprise Audit",   type: "cluck",  power: 0,  acc: 95,  effect: "defDown" },
-  "creative-accounting": { name: "Creative Accounting", type: "cluck", power: 0, acc: 100, effect: "heal" },
-  "paper-cut":      { name: "Paper Cut",        type: "gains",  power: 60, acc: 100 },
-  "decimal-error":  { name: "Decimal Error",    type: "cardio", power: 70, acc: 90 },
+  // normal
+  "peck": M("Peck", "normal", 40), "jog-on": M("Jog On", "normal", 45), "zoomies": M("Zoomies", "normal", 60, 95),
+  "hill-sprint": M("Hill Sprint", "normal", 65, 95), "ultra-marathon": M("Ultra Marathon", "normal", 90, 85),
+  "flap-attack": M("Flap Attack", "normal", 75, 90), "cheese-roll": M("Cheese Roll", "normal", 80, 90),
+  "chicken-dance": M("Chicken Dance", "normal", 0, 100, "atkUp"), "cat-nap": M("Cat Nap", "normal", 0, 100, "heal"),
+  "judgy-stare": M("Judgy Stare", "normal", 0, 95, "defDown"), "slobber": M("Slobber", "normal", 0, 95, "defDown"),
+  "snore": M("Snore", "normal", 0, 100, "heal"), "second-wind": M("Second Wind", "normal", 0, 100, "spdUp"),
+  "paper-cut": M("Paper Cut", "normal", 60),
+  // dark
+  "midnight-hiss": M("Midnight Hiss", "dark", 45), "shadow-pounce": M("Shadow Pounce", "dark", 65, 95),
+  "witching-hour": M("Witching Hour", "dark", 90, 85), "hidden-fees": M("Hidden Fees", "dark", 70, 95),
+  "vat-bill": M("Massive VAT Bill", "dark", 95, 85), "audit": M("Surprise Audit", "dark", 0, 95, "defDown"),
+  // psychic
+  "mind-purr": M("Mind Purr", "psychic", 45), "third-eye": M("Third Eye", "psychic", 65, 95),
+  "purrnormal": M("Purrnormal Activity", "psychic", 90, 85), "decimal-error": M("Decimal Error", "psychic", 70, 90),
+  "creative-accounting": M("Creative Accounting", "psychic", 0, 100, "heal"),
+  // fire
+  "hot-sip": M("Hot Sip", "fire", 45), "espresso-shot": M("Espresso Shot", "fire", 65, 95),
+  "builders-brew": M("Builder's Brew", "fire", 90, 85), "scarlet-blaze": M("Stroud Scarlet", "fire", 75, 90),
+  // water
+  "spit-take": M("Spit Take", "water", 45), "canal-splash": M("Canal Splash", "water", 65, 95),
+  "tidal-bore": M("Tidal Bore", "water", 95, 85), "tea-break": M("Tea Break", "water", 0, 100, "heal"),
+  // grass
+  "leaf-flick": M("Leaf Flick", "grass", 45), "wild-garlic": M("Wild Garlic Breath", "grass", 65, 95),
+  "beechwood-bash": M("Beechwood Bash", "grass", 90, 85),
+  // flying
+  "wing-slap": M("Wing Slap", "flying", 45), "dive-bomb": M("Dive Bomb", "flying", 65, 95),
+  "thermal-soar": M("Thermal Soar", "flying", 90, 85),
+  // fighting
+  "wall-ball": M("Wall Ball", "fighting", 45), "kettlebell-swing": M("Kettlebell Swing", "fighting", 65, 95),
+  "burpee-blitz": M("Burpee Blitz", "fighting", 75, 90), "deadlift": M("Deadlift", "fighting", 90, 85),
+  "pump-up": M("Pump Up", "fighting", 0, 100, "atkUp"),
+  // ghost
+  "spooky-wail": M("Spooky Wail", "ghost", 45), "haunt": M("Haunt", "ghost", 65, 95),
+  "poltergeist": M("Poltergeist Party", "ghost", 90, 85),
+  // dragon
+  "dragon-snort": M("Dragon Snort", "dragon", 60), "deerhurst-fury": M("Deerhurst Fury", "dragon", 95, 85),
 };
 
+// sp(name, emoji, type, [hp, atk, def, spd], xp, catchRate, moves, extra)
+// emoji draws the sprite (auto-pixelated); `tint` hue-shifts it; `badge` adds a small second emoji.
+// Hand-drawn sprites in pixels.js override the emoji.
+const sp = (name, emoji, type, [hp, atk, def, spd], xp, catchRate, moves, extra = {}) =>
+  ({ name, emoji, type, base: { hp, atk, def, spd }, xp, catchRate, moves, ...extra });
+
 const LUCE_MOVES  = [[1,"peck"],[1,"jog-on"],[4,"second-wind"],[9,"hill-sprint"],[13,"zoomies"],[17,"ultra-marathon"]];
-const SPOOK_MOVES = [[1,"peck"],[1,"hot-sip"],[4,"judgy-stare"],[9,"espresso-shot"],[13,"tea-break"],[17,"builders-brew"]];
-const MARIE_MOVES = [[1,"peck"],[1,"wall-ball"],[4,"cat-nap"],[9,"kettlebell-swing"],[13,"pump-up"],[17,"deadlift"]];
+const SPOOK_MOVES = [[1,"peck"],[1,"midnight-hiss"],[4,"judgy-stare"],[9,"shadow-pounce"],[13,"cat-nap"],[17,"witching-hour"]];
+const MARIE_MOVES = [[1,"peck"],[1,"mind-purr"],[4,"cat-nap"],[9,"third-eye"],[13,"chicken-dance"],[17,"purrnormal"]];
 
-// base stats roughly 40-110. moves: [levelLearned, moveId]
 const SPECIES = {
-  // --- starters: Sam's cats (3 stages each, pixel art in pixels.js) ---
-  luce:      { name: "Luce",       emoji: "🐈", type: "cardio", base: { hp: 42, atk: 55, def: 42, spd: 66 }, xp: 55, catchRate: 0.2,
-               moves: LUCE_MOVES, evolve: { at: 8, into: "lucy" }, flavor: "A black and white fluffball. Does 3am laps of the house 'for training'." },
-  lucy:      { name: "Lucy",       emoji: "🐈", type: "cardio", base: { hp: 58, atk: 72, def: 54, spd: 82 }, xp: 90, catchRate: 0,
-               moves: LUCE_MOVES, evolve: { at: 16, into: "lucius" }, flavor: "Sam's running buddy. Fluffier with every mile." },
-  lucius:    { name: "Lucius",     emoji: "🐈", type: "cardio", base: { hp: 72, atk: 90, def: 66, spd: 100 }, xp: 130, catchRate: 0,
-               moves: LUCE_MOVES, flavor: "Emperor of the ultra trail. Has never once been overtaken. Still wants dinner at 5pm sharp." },
-  spook:     { name: "Spook",      emoji: "🐈‍⬛", type: "brew", base: { hp: 48, atk: 52, def: 48, spd: 55 }, xp: 55, catchRate: 0.2,
-               moves: SPOOK_MOVES, evolve: { at: 8, into: "spooks" }, flavor: "A tiny black cat. Appears silently whenever a kettle boils." },
-  spooks:    { name: "Spooks",     emoji: "🐈‍⬛", type: "brew", base: { hp: 64, atk: 68, def: 60, spd: 66 }, xp: 90, catchRate: 0,
-               moves: SPOOK_MOVES, evolve: { at: 16, into: "spookus" }, flavor: "Haunts the coffee shop. Only drinks tea, out of spite." },
-  spookus:   { name: "Spookus",    emoji: "🐈‍⬛", type: "brew", base: { hp: 82, atk: 84, def: 74, spd: 78 }, xp: 130, catchRate: 0,
-               moves: SPOOK_MOVES, flavor: "A legend whispered about in tea rooms. Its stare can cool a cuppa instantly." },
-  marie:     { name: "Marie",      emoji: "🐱", type: "gains", base: { hp: 52, atk: 52, def: 58, spd: 44 }, xp: 55, catchRate: 0.2,
-               moves: MARIE_MOVES, evolve: { at: 8, into: "marigold" }, flavor: "A little calico. Sits on Sam's back during push-ups for extra resistance." },
-  marigold:  { name: "Marigold",   emoji: "🐱", type: "gains", base: { hp: 68, atk: 66, def: 72, spd: 52 }, xp: 90, catchRate: 0,
-               moves: MARIE_MOVES, evolve: { at: 16, into: "marigoldus" }, flavor: "Has her own spot at the CrossFit box. Nobody dares take it." },
-  marigoldus:{ name: "Marigoldus", emoji: "🐱", type: "gains", base: { hp: 88, atk: 80, def: 88, spd: 60 }, xp: 130, catchRate: 0,
-               moves: MARIE_MOVES, flavor: "PB on every lift. Then naps for 20 hours to recover." },
+  // --- Sam's cats: you get all three ---
+  luce:     sp("Luce", "🐈", "normal", [44,55,42,66], 55, 0, LUCE_MOVES, { evolve: { at: 12, into: "lucy" },
+            flavor: "A black and white fluffball. Does 3am laps of the bungalow 'for training'." }),
+  lucy:     sp("Lucy", "🐈", "normal", [60,72,54,82], 90, 0, LUCE_MOVES, { evolve: { at: 22, into: "lucius" },
+            flavor: "Sam's running buddy. Fluffier with every mile." }),
+  lucius:   sp("Lucius", "🐈", "normal", [74,90,66,100], 130, 0, LUCE_MOVES,
+            { flavor: "Emperor of the Cotswold Way. Never once overtaken. Still wants dinner at 5pm sharp." }),
+  spook:    sp("Spook", "🐈‍⬛", "dark", [46,56,46,58], 55, 0, SPOOK_MOVES, { evolve: { at: 12, into: "spooks" },
+            flavor: "A tiny black cat. Appears silently whenever a kettle boils." }),
+  spooks:   sp("Spooks", "🐈‍⬛", "dark", [62,72,58,70], 90, 0, SPOOK_MOVES, { evolve: { at: 22, into: "spookus" },
+            flavor: "Haunts the coffee shop at night. Only drinks tea, out of spite." }),
+  spookus:  sp("Spookus", "🐈‍⬛", "dark", [80,88,72,80], 130, 0, SPOOK_MOVES,
+            { flavor: "Whispered about in Stroud tea rooms. Its stare can cool a cuppa instantly." }),
+  marie:    sp("Marie", "🐱", "psychic", [50,54,56,48], 55, 0, MARIE_MOVES, { evolve: { at: 12, into: "marigold" },
+            flavor: "A little calico. Always knows when the treat cupboard is about to open." }),
+  marigold: sp("Marigold", "🐱", "psychic", [66,70,70,56], 90, 0, MARIE_MOVES, { evolve: { at: 22, into: "marigoldus" },
+            flavor: "Stares at empty corners of the bungalow. Sees things nobody else can." }),
+  marigoldus: sp("Marigoldus", "🐱", "psychic", [86,86,84,64], 130, 0, MARIE_MOVES,
+            { flavor: "A calico oracle. Predicted the VAT bill weeks ago. Nobody listened." }),
 
-  // --- wild ---
-  chicklet:  { name: "Chicklet",    emoji: "🐣", type: "cluck",  base: { hp: 40, atk: 45, def: 40, spd: 55 }, xp: 40, catchRate: 0.75,
-               moves: [[1,"peck"],[1,"chicken-dance"],[8,"flap-attack"]], flavor: "A tiny Mr Chicken in training." },
-  beanie:    { name: "Beanie",      emoji: "🫘", type: "brew",   base: { hp: 45, atk: 50, def: 45, spd: 50 }, xp: 40, catchRate: 0.7,
-               moves: [[1,"peck"],[1,"hot-sip"],[9,"espresso-shot"]], flavor: "A coffee bean with big dreams of being tea." },
-  croissnack:{ name: "Croissnack",  emoji: "🥐", type: "cluck",  base: { hp: 55, atk: 40, def: 50, spd: 30 }, xp: 40, catchRate: 0.7,
-               moves: [[1,"peck"],[1,"cat-nap"],[10,"flap-attack"]], flavor: "Flaky. Buttery. Always on the counter at the coffee shop." },
-  towpathduck:{ name: "Towpath Duck", emoji: "🦆", type: "cardio", base: { hp: 45, atk: 45, def: 40, spd: 60 }, xp: 40, catchRate: 0.7,
-               moves: [[1,"peck"],[1,"jog-on"],[8,"zoomies"],[11,"hill-sprint"]], flavor: "Lives on the Stroudwater Canal. Races every runner on the towpath. Usually wins." },
-  moochinhampton:{ name: "Moochinhampton", emoji: "🐄", type: "gains", base: { hp: 80, atk: 65, def: 70, spd: 35 }, xp: 65, catchRate: 0.5,
-               moves: [[1,"wall-ball"],[1,"judgy-stare"],[12,"kettlebell-swing"],[16,"deadlift"]], flavor: "Grazes the commons. Refuses to move off the road for anyone." },
-  shakey:    { name: "Shakey",      emoji: "🥤", type: "gains",  base: { hp: 50, atk: 50, def: 45, spd: 55 }, xp: 45, catchRate: 0.65,
-               moves: [[1,"peck"],[1,"wall-ball"],[9,"kettlebell-swing"]], flavor: "A protein shake that never stops talking about macros." },
-  boxroo:    { name: "Boxroo",      emoji: "🦘", type: "cardio", base: { hp: 50, atk: 55, def: 45, spd: 65 }, xp: 50, catchRate: 0.6,
-               moves: [[1,"jog-on"],[1,"second-wind"],[10,"hill-sprint"]], flavor: "Box jumps for fun. 400 of them. Before breakfast." },
-  kettlebear:{ name: "Kettlebear",  emoji: "🐻", type: "gains",  base: { hp: 65, atk: 70, def: 60, spd: 40 }, xp: 60, catchRate: 0.5,
-               moves: [[1,"wall-ball"],[1,"pump-up"],[11,"kettlebell-swing"],[16,"deadlift"]], flavor: "Lives at the CrossFit box. Has never been seen leaving." },
-  blisterbug:{ name: "Blisterbug",  emoji: "🐞", type: "cardio", base: { hp: 45, atk: 60, def: 50, spd: 70 }, xp: 55, catchRate: 0.55,
-               moves: [[1,"jog-on"],[1,"judgy-stare"],[11,"hill-sprint"],[16,"ultra-marathon"]], flavor: "Appears around mile 40. Every ultra runner knows it." },
-  trailgoat: { name: "Trail Goat",  emoji: "🐐", type: "cardio", base: { hp: 60, atk: 65, def: 60, spd: 70 }, xp: 65, catchRate: 0.5,
-               moves: [[1,"jog-on"],[1,"zoomies"],[12,"hill-sprint"],[16,"ultra-marathon"]], flavor: "Laughs at your hill repeats. Does them backwards." },
-  teapotamus:{ name: "Teapotamus",  emoji: "🦛", type: "brew",   base: { hp: 75, atk: 65, def: 65, spd: 40 }, xp: 70, catchRate: 0.45,
-               moves: [[1,"hot-sip"],[1,"tea-break"],[12,"espresso-shot"],[16,"builders-brew"]], flavor: "Holds 400 cups of tea. Sam's dream Samster." },
-  cakemimic: { name: "Cakemimic",   emoji: "🎂", type: "cluck",  base: { hp: 75, atk: 70, def: 70, spd: 70 }, xp: 90, catchRate: 0.3,
-               moves: [[1,"flap-attack"],[1,"chicken-dance"],[12,"too-many-candles"],[16,"midlife-crisis"]], flavor: "A birthday cake that bites back." },
-  mrchicken: { name: "Mr Chicken",  emoji: "🐓", type: "cluck",  base: { hp: 90, atk: 90, def: 80, spd: 85 }, xp: 120, catchRate: 0.2,
-               moves: [[1,"flap-attack"],[1,"chicken-dance"],[1,"ultra-marathon"],[1,"deadlift"]], flavor: "LEGENDARY. Runs ultras, lifts heavy, drinks tea. Chloe's favourite." },
+  // --- Stonehouse & the canal ---
+  chicklet:  sp("Chicklet", "🐣", "normal", [40,45,40,55], 40, 0.75, [[1,"peck"],[1,"chicken-dance"],[9,"flap-attack"]],
+             { flavor: "A tiny Mr Chicken in training." }),
+  fezzant:   sp("Fezzant", "🦃", "normal", [50,50,45,40], 42, 0.7, [[1,"peck"],[1,"judgy-stare"],[9,"zoomies"]],
+             { tint: 330, flavor: "A Cotswold pheasant. Stands in the middle of every country lane. Will not move." }),
+  skylarky:  sp("Skylarky", "🐦", "flying", [40,48,38,68], 42, 0.7, [[1,"wing-slap"],[1,"second-wind"],[10,"dive-bomb"]],
+             { tint: 150, flavor: "Sings non-stop over the commons. Only ever larking about." }),
+  roastbean: sp("Roastbean", "🫘", "fire", [44,54,42,50], 42, 0.7, [[1,"hot-sip"],[1,"peck"],[10,"espresso-shot"]],
+             { flavor: "Escaped from the coffee shop grinder. Very, very awake." }),
+  towpathduck: sp("Towpath Duck", "🦆", "water", [46,46,42,58], 42, 0.7, [[1,"peck"],[1,"spit-take"],[9,"canal-splash"]],
+             { flavor: "Races every runner on the Stroudwater Canal towpath. Usually wins." }),
+  swanky:    sp("Swanky", "🦢", "water", [60,58,56,48], 55, 0.55, [[1,"wing-slap"],[1,"spit-take"],[11,"canal-splash"],[16,"tidal-bore"]],
+             { flavor: "Owns the canal. Has never once paid a licence fee." }),
+  kingfizz:  sp("Kingfizz", "🐦", "water", [42,62,40,74], 55, 0.5, [[1,"spit-take"],[1,"wing-slap"],[11,"canal-splash"],[16,"dive-bomb"]],
+             { tint: 25, flavor: "A flash of blue and orange over the canal. Blink and you'll miss it." }),
+  heronimo:  sp("Heronimo", "🦩", "water", [58,66,52,52], 60, 0.5, [[1,"peck"],[1,"judgy-stare"],[12,"canal-splash"],[17,"tidal-bore"]],
+             { tint: 200, flavor: "Stands perfectly still on one leg for hours. Then: chaos." }),
+  severnboar:sp("Severn Boar", "🐗", "water", [90,95,80,75], 150, 0.25, [[1,"tidal-bore"],[1,"canal-splash"],[1,"deadlift"],[1,"zoomies"]],
+             { badge: "🌊", legendary: true, flavor: "LEGENDARY. ★★★★★ Rides the Severn Bore, the tidal wave that surges UP the River Severn on the biggest spring tides. Surfers chase it for miles. Only seen at Framilode, and only once." }),
 
-  // --- friends' pets ---
-  ralph:     { name: "Ralph",       emoji: "🐶", type: "cluck",  base: { hp: 55, atk: 45, def: 50, spd: 25 }, xp: 50, catchRate: 0,
-               moves: [[1,"peck"],[1,"snore"],[1,"slobber"],[5,"zoomies"]], flavor: "French bulldog. Snores. Drools. Sam remains unconvinced." },
-  bonnie:    { name: "Bonnie",      emoji: "🐶", type: "cluck",  base: { hp: 50, atk: 50, def: 45, spd: 35 }, xp: 50, catchRate: 0,
-               moves: [[1,"peck"],[1,"slobber"],[1,"zoomies"],[5,"snore"]], flavor: "French bulldog. Wants to be Sam's best friend. Sam disagrees." },
-  jkdog:     { name: "Pack Pup",    emoji: "🐕", type: "cardio", base: { hp: 50, atk: 55, def: 45, spd: 60 }, xp: 50, catchRate: 0,
-               moves: [[1,"zoomies"],[1,"jog-on"],[1,"slobber"],[8,"hill-sprint"]], flavor: "One of Jaz and Kim's four dogs. There's always another one." },
-  jkcat:     { name: "Kim's Cat",   emoji: "🐈", type: "brew",   base: { hp: 55, atk: 60, def: 50, spd: 60 }, xp: 55, catchRate: 0,
-               moves: [[1,"hot-sip"],[1,"judgy-stare"],[1,"espresso-shot"],[1,"cat-nap"]], flavor: "Outnumbered four to one by dogs. Completely unbothered." },
-  jkrabbit:  { name: "Jaz's Rabbit",emoji: "🐇", type: "gains",  base: { hp: 55, atk: 60, def: 55, spd: 65 }, xp: 55, catchRate: 0,
-               moves: [[1,"wall-ball"],[1,"pump-up"],[1,"kettlebell-swing"],[1,"zoomies"]], flavor: "Does box jumps. Thinks CrossFit was its idea." },
-  winnie:    { name: "Winnie",      emoji: "🐕", type: "cardio", base: { hp: 85, atk: 80, def: 70, spd: 90 }, xp: 120, catchRate: 0,
-               moves: [[1,"zoomies"],[1,"hill-sprint"],[1,"slobber"],[1,"ultra-marathon"]], flavor: "Chloe's Jack Russell and Sam's favourite. Unlimited energy, unlimited love." },
+  // --- Stroud ---
+  scarlemoth:sp("Scarlemoth", "🦋", "fire", [48,62,44,64], 55, 0.55, [[1,"hot-sip"],[1,"wing-slap"],[11,"scarlet-blaze"]],
+             { tint: 320, flavor: "Its wings are dyed Stroud Scarlet, like the old mill cloth. Hotter than it looks." }),
+  ramsomp:   sp("Ramsomp", "🧄", "grass", [52,56,52,46], 50, 0.6, [[1,"leaf-flick"],[1,"judgy-stare"],[10,"wild-garlic"]],
+             { flavor: "Wild garlic from the Stroud woods. You smell it before you see it." }),
+  kettlebear:sp("Kettlebear", "🐻", "fighting", [64,70,60,42], 60, 0.5, [[1,"wall-ball"],[1,"pump-up"],[11,"kettlebell-swing"],[17,"deadlift"]],
+             { flavor: "Lives at the CrossFit box. Has never been seen leaving." }),
+  boxroo:    sp("Boxroo", "🦘", "fighting", [52,58,46,66], 52, 0.55, [[1,"wall-ball"],[1,"second-wind"],[10,"burpee-blitz"]],
+             { flavor: "Box jumps for fun. 400 of them. Before breakfast." }),
+  teapotamus:sp("Teapotamus", "🦛", "water", [74,64,66,40], 65, 0.45, [[1,"spit-take"],[1,"tea-break"],[12,"canal-splash"],[17,"tidal-bore"]],
+             { flavor: "Holds 400 cups of tea. Sam's dream critter." }),
+  badgerlad: sp("Badgerlad", "🦡", "dark", [60,64,62,46], 58, 0.5, [[1,"midnight-hiss"],[1,"judgy-stare"],[12,"shadow-pounce"]],
+             { flavor: "Comes out at night to raid the bins behind the market." }),
+
+  // --- Selsley Common & the hills ---
+  forkite:   sp("Forkite", "🦅", "flying", [56,68,50,70], 62, 0.45, [[1,"wing-slap"],[1,"judgy-stare"],[12,"dive-bomb"],[17,"thermal-soar"]],
+             { tint: 330, flavor: "A red kite. Circles the valleys on thermals, eyeing your sandwiches." }),
+  owlpen:    sp("Owlpen", "🦉", "psychic", [58,60,56,58], 62, 0.45, [[1,"mind-purr"],[1,"wing-slap"],[12,"third-eye"],[17,"purrnormal"]],
+             { flavor: "A barn owl from the Owlpen valley. Glides silently. Knows what you did." }),
+  wrenegade: sp("Wrenegade", "🐦", "fighting", [38,66,40,76], 55, 0.55, [[1,"wall-ball"],[1,"wing-slap"],[11,"burpee-blitz"]],
+             { tint: 60, flavor: "Tiny. Loud. Will fight anything. Respect the wren." }),
+  cotswool:  sp("Cotswool", "🐑", "normal", [62,46,62,38], 55, 0.55, [[1,"peck"],[1,"snore"],[10,"zoomies"]],
+             { evolve: { at: 18, into: "cotslion" }, flavor: "A Cotswold sheep. Very woolly. Very calm. Very suspicious of runners." }),
+  cotslion:  sp("Cotswold Lion", "🦁", "fighting", [84,82,78,58], 100, 0.25, [[1,"zoomies"],[1,"pump-up"],[12,"burpee-blitz"],[18,"deadlift"]],
+             { flavor: "What a Cotswool becomes when it's had enough. The mane is all wool." }),
+  moochinhampton: sp("Moochinhampton", "🐄", "normal", [80,64,70,34], 62, 0.5, [[1,"peck"],[1,"judgy-stare"],[12,"zoomies"],[16,"cheese-roll"]],
+             { flavor: "Grazes the commons. Refuses to move off the road for anyone." }),
+  beechling: sp("Beechling", "🌳", "grass", [62,60,64,40], 58, 0.5, [[1,"leaf-flick"],[1,"tea-break"],[12,"wild-garlic"],[17,"beechwood-bash"]],
+             { flavor: "A walking beech sapling from the Cotswold woods. Sheds leaves when nervous." }),
+  rolley:    sp("Rolley Gloucester", "🧀", "normal", [66,70,60,72], 75, 0.35, [[1,"cheese-roll"],[1,"zoomies"],[14,"flap-attack"]],
+             { flavor: "A wheel of Double Gloucester that escaped down Cooper's Hill. Still rolling." }),
+  wisp:      sp("Woodchester Wisp", "👻", "ghost", [52,68,48,70], 75, 0.35, [[1,"spooky-wail"],[1,"judgy-stare"],[12,"haunt"],[17,"poltergeist"]],
+             { flavor: "Drifts through the unfinished halls of Woodchester Mansion. Rattles the scaffolding at night." }),
+  tumpling:  sp("Tumpling", "🪨", "ghost", [70,62,80,36], 70, 0.4, [[1,"spooky-wail"],[1,"cat-nap"],[12,"haunt"]],
+             { flavor: "A grumpy stone spirit from Hetty Pegler's Tump. Has been napping for 5,000 years." }),
+  wyrm:      sp("Deerhurst Wyrm", "🐉", "dragon", [92,96,82,78], 160, 0.1, [[1,"dragon-snort"],[1,"deerhurst-fury"],[1,"scarlet-blaze"],[1,"thermal-soar"]],
+             { legendary: true, flavor: "LEGENDARY. The dragon of Deerhurst, from the old Gloucestershire legend. Very rarely seen above Selsley." }),
+  mrchicken: sp("Mr Chicken", "🐓", "normal", [90,90,80,85], 140, 0.15, [[1,"flap-attack"],[1,"chicken-dance"],[1,"ultra-marathon"],[1,"deadlift"]],
+             { legendary: true, flavor: "LEGENDARY. Runs ultras, lifts heavy, drinks tea. Chloe's favourite." }),
+
+  // --- friends' pets (trainers only) ---
+  ralph:   sp("Ralph", "🐶", "normal", [55,45,50,25], 50, 0, [[1,"peck"],[1,"snore"],[1,"slobber"],[5,"zoomies"]],
+           { flavor: "French bulldog. Snores. Drools. Sam remains unconvinced." }),
+  bonnie:  sp("Bonnie", "🐶", "normal", [50,50,45,35], 50, 0, [[1,"peck"],[1,"slobber"],[1,"zoomies"],[5,"snore"]],
+           { flavor: "French bulldog. Wants to be Sam's best friend. Sam disagrees." }),
+  milo:    sp("Milo", "🐕", "normal", [55,58,48,62], 55, 0, [[1,"zoomies"],[1,"jog-on"],[1,"slobber"],[8,"hill-sprint"]],
+           { flavor: "Jaz and Kim's dog. First to the door, every single time." }),
+  chap:    sp("Chap", "🐕‍🦺", "fighting", [58,62,52,55], 55, 0, [[1,"wall-ball"],[1,"jog-on"],[1,"pump-up"],[8,"kettlebell-swing"]],
+           { tint: 25, flavor: "Jaz and Kim's dog. A proper gentleman until there's a ball involved." }),
+  lila:    sp("Lila", "🐩", "psychic", [55,55,50,64], 55, 0, [[1,"mind-purr"],[1,"judgy-stare"],[1,"zoomies"],[8,"third-eye"]],
+           { flavor: "Jaz and Kim's dog. Knows you have a biscuit. Knows which pocket." }),
+  gerty:   sp("Gerty", "🦮", "water", [62,58,55,50], 60, 0, [[1,"spit-take"],[1,"slobber"],[1,"canal-splash"],[8,"zoomies"]],
+           { tint: -20, flavor: "Jaz and Kim's dog. Has never once walked past a puddle." }),
+  oswald:  sp("Oswald", "🐈", "dark", [58,62,52,62], 60, 0, [[1,"midnight-hiss"],[1,"judgy-stare"],[1,"shadow-pounce"],[1,"cat-nap"]],
+           { flavor: "Jaz and Kim's cat. Outnumbered four to one by dogs. Completely unbothered." }),
+  jkrabbit:sp("Jaz & Kim's Rabbit", "🐇", "fighting", [55,60,55,65], 55, 0, [[1,"wall-ball"],[1,"pump-up"],[1,"kettlebell-swing"],[1,"zoomies"]],
+           { flavor: "Does box jumps. Thinks CrossFit was its idea." }),
+  winnie:  sp("Winnie", "🐕", "fighting", [85,80,70,90], 120, 0, [[1,"zoomies"],[1,"hill-sprint"],[1,"burpee-blitz"],[1,"ultra-marathon"]],
+           { flavor: "Chloe's Jack Russell and Sam's favourite. Unlimited energy, unlimited love." }),
 
   // --- the villain ---
-  receipt:   { name: "Receipt Gremlin", emoji: "🧾", type: "gains", base: { hp: 65, atk: 65, def: 65, spd: 60 }, xp: 80, catchRate: 0,
-               moves: [[1,"paper-cut"],[1,"audit"],[1,"zoomies"],[1,"late-fee"]], flavor: "Every receipt Sam ever lost. They found each other." },
-  spreadsheet:{ name: "Spreadshriek", emoji: "📊", type: "cardio", base: { hp: 70, atk: 65, def: 75, spd: 55 }, xp: 85, catchRate: 0,
-               moves: [[1,"decimal-error"],[1,"audit"],[1,"paper-cut"],[1,"flap-attack"]], flavor: "A spreadsheet where every formula is wrong. Screams in Excel errors." },
-  tina:      { name: "Tina",          emoji: "👩‍💼", type: "cluck", base: { hp: 105, atk: 82, def: 78, spd: 62 }, xp: 220, catchRate: 0, boss: true,
-               moves: [[1,"vat-bill"],[1,"late-fee"],[1,"audit"],[1,"creative-accounting"]], flavor: "The coffee shop's accountant. Messed up the VAT. Blames Sam." },
+  receipt:   sp("Receipt Gremlin", "🧾", "dark", [65,65,65,60], 80, 0, [[1,"paper-cut"],[1,"audit"],[1,"hidden-fees"],[1,"zoomies"]],
+             { flavor: "Every receipt Sam ever lost. They found each other." }),
+  spreadsheet: sp("Spreadshriek", "📊", "psychic", [70,65,75,55], 85, 0, [[1,"decimal-error"],[1,"audit"],[1,"paper-cut"],[1,"third-eye"]],
+             { flavor: "A spreadsheet where every formula is wrong. Screams in error messages." }),
+  tina:      sp("Tina", "👩‍💼", "dark", [108,84,80,64], 220, 0, [[1,"vat-bill"],[1,"hidden-fees"],[1,"audit"],[1,"creative-accounting"]],
+             { boss: true, flavor: "The coffee shop's accountant. Messed up the VAT. Blames Sam." }),
 };
 
 const STARTERS = ["luce", "spook", "marie"];
 
-// Each area has a trainer you must beat to unlock the next one.
-// wild: [species, minLevel, maxLevel, weight(optional, default 10)]
-const AREAS = [
-  { id: "shop", name: "Stonehouse", emoji: "☕", bg: ["#fde68a", "#f5c28b"],
-    desc: "Home turf. The coffee shop smells amazing and Sam is, of course, drinking tea. Ducks patrol the canal.",
-    wild: [["chicklet",2,4],["beanie",2,4],["croissnack",3,4],["towpathduck",2,4,6]],
-    trainer: { name: "Freddie & Georgina", emoji: "👫",
-               intro: "Happy birthday Sam! Ralph and Bonnie are SO excited to see you!",
-               win: "Ralph is licking your shoe in defeat. He still loves you.",
-               team: [["ralph",4],["bonnie",5]] } },
-  { id: "box", name: "Stroud CrossFit Box", emoji: "🏋️", bg: ["#fca5a5", "#fdba74"],
-    desc: "Up the hill into Stroud. Chalk in the air, chalk on the floor, chalk in Sam's tea.",
-    wild: [["shakey",5,8],["boxroo",5,8],["towpathduck",5,7,5],["kettlebear",7,8,5],["luce",6,7,2],["spook",6,7,2],["marie",6,7,2]],
-    trainer: { name: "Jaz & Kim", emoji: "👭",
-               intro: "Today's WOD: beat all six of our pets. For time!",
-               win: "Okay, okay! Everybody back in the car. ALL of you.",
-               team: [["jkrabbit",7],["jkdog",7],["jkdog",8],["jkcat",8],["jkdog",8],["jkdog",9]] } },
-  { id: "trail", name: "Selsley Common", emoji: "⛰️", bg: ["#86efac", "#7dd3fc"],
-    desc: "The Cotswold Way across the Five Valleys. Mud, hills and cows. Sam calls 50 miles of this 'a nice day out'.",
-    wild: [["blisterbug",9,12],["trailgoat",9,12],["moochinhampton",9,12],["teapotamus",10,12,4]],
-    trainer: { name: "Chloe", emoji: "👩",
-               intro: "Morning, Mr Chicken! Winnie's been waiting for you all day. Let's see what you've got!",
-               win: "Not bad, Mr Chicken! Now go sort out that VAT bill. Winnie's coming to cheer you on.",
-               team: [["chicklet",13],["winnie",14]] } },
-  { id: "tower", name: "Tina's Tax Office", emoji: "🏢", bg: ["#cbd5e1", "#a5b4fc"],
-    desc: "Up some creaky stairs off Stroud high street. Grey carpet, beige walls, and a filing cabinet that hums menacingly.",
-    wild: [["teapotamus",13,16],["moochinhampton",13,16],["kettlebear",13,16],["cakemimic",14,16,4],["mrchicken",16,18,2]],
-    trainer: { name: "Tina the Accountant", emoji: "👩‍💼", boss: true,
-               intro: "Ah, Sam. About that VAT... it's technically YOUR fault. Now, about my invoice for telling you!",
-               win: "Fine! FINE! I'll refile the VAT return. And... happy birthday, Sam. Invoice to follow.",
-               team: [["receipt",15],["spreadsheet",16],["tina",18]] } },
-];
+// ---------- Quest journal ----------
+// Each quest is done when all its flags are set. Main quests are shown in order: the first unfinished one is "current".
+const QUESTS = {
+  main: [
+    { flags: ["letter"], title: "Check the doormat", hint: "Something came through the letterbox. Head to the hallway." },
+    { flags: ["beat_fg"], title: "Find Freddie & Georgina", hint: "They're in Rough Hands Coffee on Stonehouse High Street, with Ralph and Bonnie. Freddie has your railcard." },
+    { flags: ["beat_jk"], title: "Visit Jaz & Kim", hint: "Their house is on the path from Adelaide Gardens up to the High Street. Six pets. Good luck." },
+    { flags: ["beat_chloe"], title: "See Chloe and Winnie", hint: "Chloe's house is right by Stonehouse station. Train up on Selsley Common first if you need to." },
+    { flags: ["beat_tina"], title: "Sort out the VAT bill", hint: "Tina's office is on Stroud High Street. Take the train from Stonehouse, or walk through Ebley." },
+  ],
+  side: [
+    { flags: ["boar"], title: "Catch the five-star bore", hint: "Head west from Stonehouse to Framilode and talk to the surfer." },
+    { flags: ["beat_coach"], title: "Survive the 6am WOD", hint: "Coach Kev runs the CrossFit box on Merrywalks in Stroud." },
+    { flags: ["beat_bev", "beat_priya"], title: "Take on the Ebley locals", hint: "Boater Bev on the towpath and Parkrunner Priya by the road." },
+    { flags: ["beat_sid"], title: "Out-skate Skater Sid", hint: "He's in the park south of Stroud's railway." },
+    { flags: ["beat_bill", "beat_ursula"], title: "Conquer Selsley Common", hint: "Birdwatcher Bill and Ultra Runner Ursula. The lane south from Ebley, over the canal bridge." },
+    { caught: 20, title: "Catch 20 critters", hint: "Wild critters hide in tall grass, spinifex and reeds." },
+  ],
+};
+
