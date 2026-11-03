@@ -12,12 +12,17 @@ const S = () => window.PS.S();
 
 // ---------- tile painting ----------
 // Each tile is painted once onto a 16x16 canvas and cached.
-const SOLID = new Set("THRwSVM~#fWvkKtbpqdFCon|YajiZEQGUhlmNIJA1234567".split(""));
+const SOLID = new Set("THRwSVM~#fWvkKtbpqdFCon|YajiZEQGUhlmNIJA1234567890".split(""));
 const ENC = { ",": "grass", "e": "grass", "r": "reeds" };
 const TILE_CACHE = {};
 const pick = a => a[Math.floor(Math.random() * a.length)];
 function cv(w = TS, h = TS) { const c = document.createElement("canvas"); c.width = w; c.height = h; return c; }
 function px(x, c, X, Y, w = 1, h = 1) { x.fillStyle = c; x.fillRect(X, Y, w, h); }
+// espresso machine helpers: counter under it, and a group head pouring a shot into a cup on the drip tray
+function lmBase(x) { px(x, "#111827", 0, 12, 16, 4); px(x, "#a0672f", 0, 11, 16, 2); px(x, "#c08040", 0, 11, 16, 1); px(x, "#4b5563", 0, 10, 16, 1); }
+function lmGroup(x, X, f) { px(x, "#374151", X, 9, 4, 1); px(x, "#111827", X + 3, 9, 3, 1);
+  if (f < 3) { px(x, "#6f3a17", X + 1, 10, 1, Math.min(f + 1, 1)); }
+  px(x, "#f8fafc", X, 10, 3, 1); if (f > 0) px(x, f === 3 ? "#c08040" : "#7c3a12", X + 1, 10, 1, 1); }
 function seeded(n) { let s = n * 9301 + 49297; return () => ((s = (s * 9301 + 49297) % 233280) / 233280); }
 function grass(x, base = "#7ccf6a", dot = "#5fb24f", seed = 1) {
   px(x, base, 0, 0, 16, 16); const r = seeded(seed), hi = shade(base, 1.12);
@@ -82,6 +87,17 @@ const PAINT = {
   // Rough Hands: dark green, wood and black
   "6": x => { px(x, "#14532d", 0, 0, 16, 16); px(x, "#166534", 0, 0, 16, 2); for (const X of [3, 8, 13]) px(x, "#0f3d22", X, 2, 1, 10); px(x, "#7c4a22", 0, 12, 16, 4); px(x, "#9a5d2c", 0, 12, 16, 1); px(x, "#111827", 0, 15, 16, 1); },
   "7": x => { PAINT["6"](x); px(x, "#111827", 0, 6, 16, 9); px(x, "#a0672f", 0, 5, 16, 2); px(x, "#c08040", 0, 5, 16, 1); px(x, "#d1d5db", 3, 0, 7, 5); px(x, "#111827", 4, 1, 5, 2); px(x, "#f8fafc", 11, 2, 3, 3); px(x, "#7c4a22", 12, 3, 1, 1); },
+  // La Marzocca Linea: three tiles of polished steel on the counter. Animated: shots pour, steam puffs.
+  "8": (x, f) => { PAINT["6"](x); lmBase(x); px(x, "#9ca3af", 3, 1, 13, 1); px(x, "#e5e7eb", 3, 2, 13, 7); px(x, "#f8fafc", 4, 2, 2, 6); px(x, "#9ca3af", 3, 9, 13, 1);
+    px(x, "#6b7280", 2, 1, 1, 9); lmGroup(x, 9, f); },
+  "9": (x, f) => { PAINT["6"](x); lmBase(x); px(x, "#9ca3af", 0, 1, 16, 1); px(x, "#e5e7eb", 0, 2, 16, 7); px(x, "#9ca3af", 0, 9, 16, 1);
+    px(x, "#b91c1c", 3, 3, 10, 3); px(x, "#fff", 4, 4, 1, 1); px(x, "#fff", 6, 4, 1, 1); px(x, "#fff", 8, 4, 1, 1); px(x, "#fff", 10, 4, 2, 1);
+    for (const X of [2, 11]) { px(x, "#374151", X, 0, 3, 1); px(x, "#fff", X + 1, 0, 1, 1); }
+    lmGroup(x, 6, (f + 2) & 3); },
+  "0": (x, f) => { PAINT["6"](x); lmBase(x); px(x, "#9ca3af", 0, 1, 12, 1); px(x, "#e5e7eb", 0, 2, 12, 7); px(x, "#9ca3af", 0, 9, 12, 1); px(x, "#6b7280", 12, 1, 1, 9);
+    lmGroup(x, 2, (f + 1) & 3);
+    px(x, "#9ca3af", 13, 4, 1, 6); px(x, "#9ca3af", 12, 9, 2, 1); px(x, "#cbd5e1", 11, 9, 3, 2); // steam wand and jug
+    if (f & 1) { px(x, "#f8fafc", 13, 2 - (f >> 1), 2, 1); px(x, "#e5e7eb", 14, 0, 1, 1); px(x, "#f8fafc", 12, 1, 1, 1); } },
   "C": x => { PAINT.W(x); px(x, "#78350f", 0, 6, 16, 9); px(x, "#a16207", 0, 6, 16, 2); px(x, "#9ca3af", 3, 1, 6, 5); px(x, "#1b1530", 4, 2, 4, 2); px(x, "#fff", 11, 3, 3, 3); },
   // railway, stations, stone buildings, bridges
   "|": x => { px(x, "#8a8178", 0, 0, 16, 16); const r = seeded(11); for (let i = 0; i < 8; i++) px(x, "#6f665e", Math.floor(r() * 15), Math.floor(r() * 15), 1, 1);
@@ -504,6 +520,7 @@ function update(now, dt) {
       const p = Math.min(1, (now - n.t0) / 260);
       n.fx = n.sx + (n.x - n.sx) * p; n.fy = n.sy + (n.y - n.sy) * p;
       if (p >= 1) { n.moving = false; n.fx = n.x; n.fy = n.y; if (n.onArrive) { const f = n.onArrive; n.onArrive = null; f(); } }
+    } else if (n.brew) { if (!busy && n.dir !== "up") { n.lookT = (n.lookT || 1500) - dt; if (n.lookT <= 0) { n.lookT = 0; n.dir = "up"; } } // back to the machine
     } else if (!n.wander && !n.trainer && !busy && !n.alert && !ANIMAL_LOOKS[n.look] && n.look !== "prof") {
       n.lookT = (n.lookT || 2000 + Math.random() * 4000) - dt;
       if (n.lookT <= 0) { n.lookT = 2500 + Math.random() * 4000; n.dir = n.homeDir && Math.random() < 0.6 ? n.homeDir : ["left", "right", "down"][Math.floor(Math.random() * 3)]; n.homeDir = n.homeDir || n.dir; }
@@ -740,15 +757,17 @@ function draw() {
     const t = tileAt(x, y); if (t === undefined) continue;
     const v = (t === "." || t === "=" || t === "O") ? ((x * 7 + y * 13 + ((x * y) >> 1)) & 3) : 0;
     const img = (SWAY[t] && ((sway + x + (y >> 1)) & 1)) ? swayImg(t, v)
-      : tileImg(t, (t === "~" || t === "B") ? ((frame + x + y) & 3) : (t === "r" || t === "," || t === "e") ? ((frame >> 1) + x) & 1 : 0, v);
+      : tileImg(t, (t === "~" || t === "B") ? ((frame + x + y) & 3) : (t === "8" || t === "9" || t === "0") ? frame : (t === "r" || t === "," || t === "e") ? ((frame >> 1) + x) & 1 : 0, v);
     ctx.drawImage(img, x * TS - camX + offX, y * TS - camY + offY);
   }
   // painted shop signs
+  ctx.imageSmoothingEnabled = true;
   for (const sg of map.signs || []) { if (!LOGO.complete || !LOGO.naturalWidth) break;
     ctx.drawImage(LOGO, Math.round(sg.x * TS - camX + offX), Math.round(sg.y * TS - camY + offY), Math.round(sg.w * TS), Math.round(sg.w * TS * LOGO.naturalHeight / LOGO.naturalWidth)); }
+  ctx.imageSmoothingEnabled = false;
   // characters, sorted by y
   const list = npcs.filter(n => n.visible).map((n, i) => ({ img: charSprite(n.look, n.dir, n.moving ? n.step : (ANIMAL_LOOKS[n.look] ? (tick + i) & 1 : 0)), x: n.fx + (n.playfight ? ((frame & 1) ? 0.08 : -0.08) * (i % 2 ? 1 : -1) : 0), y: n.fy - (n.playfight && (frame & 2) ? 0.1 : 0), alert: n.alert,
-    aura: (LOOKS[n.look] || {}).aura,
+    aura: (LOOKS[n.look] || {}).aura, brew: n.dir === "up" && n.brew,
     bob: !n.moving && !ANIMAL_LOOKS[n.look] && ((tick + i) % 3 === 0) ? 1 : 0 }));
   const st = S();
   const bike = st.bike && !map.indoor;
@@ -760,6 +779,7 @@ function draw() {
     if (c.aura) { ctx.fillStyle = c.aura; for (let i = 0; i < 5; i++) { const a = (frame * 0.8 + i * 1.26), r = 9; ctx.globalAlpha = 0.7; ctx.fillRect(Math.round(X + 7 + Math.cos(a) * r), Math.round(Y + 8 + Math.sin(a) * r * 0.8), 2, 2); } ctx.globalAlpha = 1; }
     if (c.bob) { ctx.drawImage(c.img, 0, 0, 16, 9, X, Y + 1, 16, 9); ctx.drawImage(c.img, 0, 9, 16, 7, X, Y + 9, 16, 7); } // a little breath
     else ctx.drawImage(c.img, X, Y);
+    if (c.brew) baristaProp(c.brew, X, Y);
     if (c.alert) { ctx.fillStyle = "#fff"; ctx.fillRect(X + 5, Y - 12, 6, 10); ctx.fillStyle = "#ef4444"; ctx.fillRect(X + 7, Y - 11, 2, 5); ctx.fillRect(X + 7, Y - 5, 2, 2); }
   }
   // tall grass covers your feet
@@ -767,6 +787,22 @@ function draw() {
   if ((under === "," || under === "e") && !pl.moving) {
     const X = Math.round(pl.fx * TS - camX + offX), Y = Math.round(pl.fy * TS - camY + offY);
     ctx.drawImage(tileImg(under, frame), 0, 10, 16, 6, X, Y + 10, 16, 6);
+  }
+}
+
+// baristas at work: one pulls shots, one steams milk and pours flat whites (back to us, arms up at the machine)
+function baristaProp(kind, X, Y) {
+  const p = (c, a, b, w = 1, h = 1) => { ctx.fillStyle = c; ctx.fillRect(X + a, Y + b, w, h); };
+  const t = (frame + (kind === "milk" ? 2 : 0)) & 3;
+  if (kind === "shot") {
+    // tamp, lock in, pour, serve
+    const hx = t === 0 ? 11 : t === 1 ? 9 : 12, hy = t === 0 ? 8 : 6;
+    p("#374151", hx, hy, 3, 2); p("#111827", hx + 3, hy, 2, 1);
+    if (t >= 2) { p("#f8fafc", 2, 6, 3, 3); p(t === 3 ? "#c08040" : "#6f3a17", 3, 6, 1, 2); }
+  } else {
+    // steam (jug up with puffs), then pour latte art into a cup
+    if (t < 2) { p("#cbd5e1", 11, 5 - t, 3, 4); p("#9ca3af", 14, 6 - t, 1, 2); p("#f8fafc", 12, 2 - t, 2, 1); p("#e5e7eb", 13, 1 - t, 1, 1); }
+    else { p("#cbd5e1", 9, 6, 3, 3); p("#f8fafc", 8, 9, 1, 1); p("#f8fafc", 6, 9, 3, 3); p("#c08040", 7, 9, 1, 1); if (t === 3) p("#fff", 7, 10, 1, 1); }
   }
 }
 
