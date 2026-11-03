@@ -12,7 +12,7 @@ const S = () => window.PS.S();
 
 // ---------- tile painting ----------
 // Each tile is painted once onto a 16x16 canvas and cached.
-const SOLID = new Set("THRwSVM~#fWvkKtbpqdFCon".split(""));
+const SOLID = new Set("THRwSVM~#fWvkKtbpqdFCon|YajiZ".split(""));
 const ENC = { ",": "grass", "r": "reeds" };
 const TILE_CACHE = {};
 function cv(w = TS, h = TS) { const c = document.createElement("canvas"); c.width = w; c.height = h; return c; }
@@ -64,6 +64,19 @@ const PAINT = {
   "d": x => { PAINT["_"](x); px(x, "#78350f", 0, 3, 16, 10); px(x, "#92400e", 1, 4, 14, 8); px(x, "#f1f5f9", 3, 5, 5, 4); px(x, "#facc15", 10, 5, 3, 3); },
   "F": x => { PAINT.W(x); px(x, "#6b7280", 2, 1, 12, 14); for (const y of [3, 8]) { px(x, "#9ca3af", 3, y, 10, 4); px(x, "#1f2937", 7, y + 1, 2, 1); } },
   "C": x => { PAINT.W(x); px(x, "#78350f", 0, 6, 16, 9); px(x, "#a16207", 0, 6, 16, 2); px(x, "#9ca3af", 3, 1, 6, 5); px(x, "#1b1530", 4, 2, 4, 2); px(x, "#fff", 11, 3, 3, 3); },
+  // railway, stations, stone buildings, bridges
+  "|": x => { px(x, "#8a8178", 0, 0, 16, 16); const r = seeded(11); for (let i = 0; i < 8; i++) px(x, "#6f665e", Math.floor(r() * 15), Math.floor(r() * 15), 1, 1);
+    for (const X of [1, 6, 11]) px(x, "#6b4423", X, 2, 3, 12); px(x, "#cbd5e1", 0, 4, 16, 1); px(x, "#cbd5e1", 0, 11, 16, 1); px(x, "#64748b", 0, 5, 16, 1); px(x, "#64748b", 0, 12, 16, 1); },
+  "X": x => { PAINT["="](x); px(x, "#cbd5e1", 0, 4, 16, 1); px(x, "#cbd5e1", 0, 11, 16, 1); for (let X = 0; X < 16; X += 4) { px(x, "#fff", X, 0, 2, 2); px(x, "#fff", X + 2, 14, 2, 2); } },
+  "P": x => { px(x, "#cbc5bb", 0, 0, 16, 16); px(x, "#facc15", 0, 0, 16, 2); for (let X = 0; X < 16; X += 8) px(x, "#b3aca1", X, 2, 1, 14); px(x, "#b3aca1", 0, 9, 16, 1); },
+  "Y": x => { px(x, "#d9c27e", 0, 0, 16, 16); for (let y = 0; y < 16; y += 4) { px(x, "#b89f5b", 0, y + 3, 16, 1); for (let X = (y / 4) % 2 ? 1 : 5; X < 16; X += 8) px(x, "#b89f5b", X, y, 1, 3); } px(x, "#efe0aa", 0, 0, 16, 1); },
+  "B": (x, f) => { PAINT["~"](x, f); px(x, "#8b5a2b", 2, 0, 12, 16); px(x, "#a87842", 3, 0, 10, 16); for (let y = 1; y < 16; y += 3) px(x, "#6b4423", 3, y, 10, 1); px(x, "#4a2e16", 1, 0, 1, 16); px(x, "#4a2e16", 14, 0, 1, 16); },
+  "L": x => { px(x, "#e7dccb", 0, 0, 16, 16); for (let i = 0; i < 16; i += 8) { px(x, "#cbbfa9", i, 0, 1, 16); px(x, "#cbbfa9", 0, i, 16, 1); } px(x, "#f5efe4", 2, 2, 3, 1); },
+  "y": x => { px(x, "#e0f2fe", 0, 0, 16, 16); for (let i = 0; i < 16; i += 4) { px(x, "#bae6fd", i, 0, 1, 16); px(x, "#bae6fd", 0, i, 16, 1); } },
+  "a": x => { PAINT.y(x); px(x, "#f8fafc", 0, 2, 16, 13); px(x, "#94a3b8", 0, 14, 16, 1); px(x, "#7dd3fc", 2, 4, 12, 8); px(x, "#cbd5e1", 1, 2, 2, 2); },
+  "j": x => { PAINT.W(x); px(x, "#f8fafc", 2, 6, 12, 7); px(x, "#7dd3fc", 4, 8, 8, 3); px(x, "#94a3b8", 7, 3, 2, 4); px(x, "#93c5fd", 4, 1, 8, 4); },
+  "i": x => { PAINT.y(x); px(x, "#f8fafc", 4, 1, 8, 5); px(x, "#f8fafc", 3, 7, 10, 7); px(x, "#cbd5e1", 5, 9, 6, 3); px(x, "#94a3b8", 3, 14, 10, 1); },
+  "Z": x => { PAINT[":"](x); px(x, "#6b4423", 0, 0, 16, 16); px(x, "#f8fafc", 1, 1, 14, 5); px(x, "#60a5fa", 1, 6, 14, 10); px(x, "#3b82f6", 1, 9, 14, 1); },
 };
 function tileImg(ch, frame) {
   const k = ch + frame;
@@ -330,7 +343,7 @@ async function arrived() {
   if (map.trains && map.trains[key]) {
     const dest = map.trains[key];
     const v = await showMenu(`Take the train to ${PLACES[dest].label}? (Single: £3.40)`, [{ label: "Yes please", value: 1 }, { label: "No thanks", value: 0 }]);
-    if (v) { await travel(dest, "🚆 Choo choo! Next stop: " + PLACES[dest].label + "."); return; }
+    if (v) { await travel(dest, "🚆 Choo choo! Next stop: " + PLACES[dest].label + ".", true); return; }
     pl.y += 1; pl.fy = pl.y; return;
   }
   if (map.warps && map.warps[key]) {
@@ -340,7 +353,7 @@ async function arrived() {
     return;
   }
   // first time leaving the bungalow: the letter
-  if (mapId === "bungalow" && !flag("letter") && pl.y >= 6) {
+  if (mapId === "bungalow" && !flag("letter") && pl.y >= 12) {
     st.flags.letter = true; P().save();
     await showText(CONFIG.letter);
   }
@@ -361,8 +374,8 @@ function fade(mid) {
     setTimeout(() => { mid(); const pe = document.getElementById("wplace"); if (pe) { pe.textContent = map.name; pe.classList.remove("gone"); setTimeout(() => pe.classList.add("gone"), 1600); } w && w.classList.remove("fading"); busy = false; res(); }, 260);
   });
 }
-async function travel(dest, msg) {
-  const [m, x, y] = PLACES[dest].at;
+async function travel(dest, msg, byTrain) {
+  const [m, x, y] = (byTrain && PLACES[dest].station) || PLACES[dest].at;
   await fade(() => loadMap(m, x, y, "down"));
   if (msg) await showText([msg]);
 }
@@ -537,6 +550,8 @@ const WORLD = {
     if (map.indoor) return ["#fde68a", "#e9d8a6"];
     if (mapId === "selsley") return ["#bae6fd", "#86efac"];
     if (mapId === "stroud") return ["#e2e8f0", "#cbd5e1"];
+    if (mapId === "ebley") return ["#bae6fd", "#a7f3d0"];
+    if (mapId === "garden") return ["#e0f2fe", "#bbf7d0"];
     return ["#bae6fd", "#bbf7d0"];
   },
   look: (l, d = "down") => personSprite(l, d, 0, false),

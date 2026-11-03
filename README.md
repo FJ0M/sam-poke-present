@@ -26,7 +26,7 @@ On a keyboard use the arrows, Z or Enter for A, X for B, and S for Start.
 ## Getting around
 
 - The **van** outside the bungalow, in Stroud and on Selsley Common drives you to anywhere you've already visited.
-- The **train** runs between Stonehouse and Stroud stations.
+- The **train** runs between Stonehouse and Stroud stations. You can also walk between them through the Ebley wild area.
 - The **e-bike** is in the START menu.
 
 ## Testing
