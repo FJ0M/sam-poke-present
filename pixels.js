@@ -233,40 +233,6 @@ const WINNIE = [
   "...ooo....ooo...",
 ];
 const WINNIE_2 = { 6: ".obekbbkebo.o...", 7: ".obkkbbkkbo.obo." };
-// WINNIEEEE (24x24): lightning-fast, ears like jet wings, sweatband, speed lines
-function winnieeee() {
-  let g = pad(WINNIE, 24, 24, 6, 6);
-  g = overlay(g, [
-    "......oo..........oo....",
-    ".....obbo........obbo...",
-    "....obiibo......obiibo..",
-    "....obiiibo....obiiibo..",
-    ".....obiiibo..obiiibo...",
-    "......obiiibooobiiibo...",
-    "........................",
-    "......rrrrrrrrrrr.......",
-    "",
-    "",
-    "",
-    "",
-    ".........fo...of........",
-  ]);
-  return overlay(g, [
-    "", "", "", "", "", "",
-    "", "", "", "",
-    "a.....................a.",
-    ".a...................aA.",
-    "aa...................a..",
-    "",
-    "AAA.....................",
-    "",
-    "aaaa....................",
-    "",
-    "AAA.....................",
-    "", "",
-    "aa......................",
-  ]);
-}
 // Chap: big black Labrador. Long body, floppy ears, otter tail, tongue out.
 const LAB = [
   "................",
@@ -398,7 +364,6 @@ const HAND_PIXELS = {
   spook:  () => catPixels("spook", 1),  spooks:   () => catPixels("spook", 2),  spookus:    () => catPixels("spook", 3),
   marie:  () => catPixels("marie", 1),  marigold: () => catPixels("marie", 2),  marigoldus: () => catPixels("marie", 3),
   winnie: simple(WINNIE, { b: "#c27a3a", i: "#f4a6a6", d: "#7a4a22", m: "#3b2418", n: "#1b1530", c: "#fbf7f0", w: "#fbf7f0", k: "#2a1a10", t: "#fb7185" }, 0.8, WINNIE_2),
-  winnieeee: () => { const g = winnieeee(); return { grid: g, pal: { ...PAL_BASE, b: "#c27a3a", i: "#f4a6a6", d: "#7a4a22", m: "#3b2418", n: "#1b1530", c: "#fbf7f0", w: "#fbf7f0", k: "#2a1a10", t: "#fb7185", a: "#facc15", A: "#fde68a" }, scale: 1, frames: [shift(g, 0, 0).map(r => r.replace(/A/g, "a")), attackPose(g)] }; },
   // from Freddie's photo: Ralph is black and tan with a white chest, Bonnie is blue-grey and tan with a white body
   ralph:  simple(FRENCHIE, { h: "#1f1a1c", i: "#b9a6a0", p: "#c99a62", m: "#4a4244", n: "#111", b: "#1f1a1c", c: "#f4f1ec", w: "#c99a62", t: "#fb7185" }, 0.74, { 13: "..owwoooooowwo..", 14: "..owwo.....owwo." }),
   bonnie: simple(FRENCHIE, { h: "#6d6570", i: "#c4b3b8", p: "#c99a62", m: "#544c57", n: "#2a2428", b: "#f4f1ec", c: "#f4f1ec", w: "#f4f1ec", t: "#fb7185" }, 0.74, { 13: "..owwoooooowwo..", 14: "..owwo.....owwo." }),
@@ -409,5 +374,49 @@ const HAND_PIXELS = {
   oswald: simple(SPHYNX, { b: "#e8b9b0", T: "#e8b9b0", z: "#c98f86", i: "#f9a8d4", e: "#7dd3fc", k: "#1b1530", n: "#f472b6", m: "#c98f86" }, 0.72, CAT_TAIL2),
   kettlebear: simple(KBEAR, { b: "#7c4a22", w: "#c08a5a", e: "#fff", k: "#1b1530", n: "#1b1530", m: "#3b2418", g: "#374151", G: "#9ca3af" }, 0.86, KBEAR_2),
   mrchicken: () => ({ grid: CHICKEN, pal: { ...PAL_BASE, b: "#3b82f6" } }),
+};
+
+// WINNIEEEE (36x32, Freddie's pick, redrawn): realistic Jack Russell side profile, barking hard,
+// Rough Hands green harness, bark lines out front. Faces left.
+const WINNIEEEE_GRID = [
+  "....................................",
+  "....................................",
+  "....L...............................",
+  "..L.................................",
+  "...L................................",
+  ".........oo.....oo..................",
+  "........oBBo...obbo.................",
+  "........oBBo..obiibo.............oo.",
+  "........oBBBo.obiibo............obo.",
+  "........oBBbboobiiibo...........obo.",
+  ".......obbbbbbbbiiibo..........obbo.",
+  "..L...obddbbbbbbbbbbo..........obo..",
+  ".L...obkkddbbbbbbbbbo.........obbo..",
+  "L...obbkebbbbbbbbbbbo........obbo...",
+  "L..Lnmmbbbbbbbbbbbbbbo.......obbo...",
+  "L.L.ommmmmlbbbbbbbbbbboooooooobbo...",
+  "L.L..offfmmbbbbbbHHHHHHHHHhbbbbbo...",
+  "L..L.orrrrmbbbbbHHDhbbbbHHhBBbbbbo..",
+  ".L...orttrrmbbbbHhbbbbbbHhbbbBbbbbo.",
+  "..L...offmmwwbbHhbbbbbbbHhbbbbbBbbo.",
+  ".......oooowwbHHhbbbbbbbHhbbbbbbbbo.",
+  "..........owwHHhwwwwbbbbHhbbbbbbbbo.",
+  "...........owwwwwwwwwwwwHhwwwbbbbbo.",
+  "............owwwwwwwwwwwHhwwooobbbbo",
+  ".............obbwwobbwwoooo...obbbbo",
+  ".............obbwoobbwwo.....obbobbo",
+  ".............obwwoobwwwo.....obbobbo",
+  ".............owwwoowwwo......owwoWwo",
+  ".............owWwoowWwo......owwoWwo",
+  "............owwwooowwwo.....owwwowww",
+  "............oooooooooooo....oooooooo",
+  "....................................",
+];
+const WPAL = { b: "#c27a3a", B: "#9a5a26", l: "#dd9a5a", i: "#f4a6a6", d: "#7a4a22", m: "#3b2418", n: "#111", k: "#1b1530", e: "#ffffff",
+  w: "#fbf7f0", W: "#d9d2c6", f: "#ffffff", r: "#7f1d1d", t: "#fb7185", H: "#13683e", h: "#0b4527", D: "#d1d5db", L: "#ffffff" };
+HAND_PIXELS.winnieeee = () => {
+  const g = WINNIEEEE_GRID;
+  const quiet = g.map(r => r.replace(/L/g, "."));          // idle 2: bark lines flicker
+  return { grid: g, pal: { ...PAL_BASE, ...WPAL }, scale: 1, frames: [quiet, attackPose(g)] };
 };
 const HERO_PIXELS = HAND_PIXELS.mrchicken;

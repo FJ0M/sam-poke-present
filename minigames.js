@@ -114,8 +114,8 @@ function wallBalls() {
 function inspector() {
   return new Promise(done => {
     const S = stage("TICKETS PLEASE!", `<p class="tiny">Hold ◀ to sneak to the toilet. Freeze when the inspector looks up!</p>
-      <div class="row"><span id="inState">📋 Checking tickets...</span></div>`);
-    let samX = 118, insX = 168, state = "walk", stT = 0, stDur = 1.2, warn = false, over = false, last = performance.now(), moving = false, held = false, caughtT = 0;
+      <div class="row"><span id="inState">📋 Checking tickets...</span><span id="inSus">👁 ○○○</span></div>`);
+    let samX = 118, insX = 160, state = "check", stT = 0, stDur = 3.2, warn = false, sus = 0, strikes = 0, frozen = 0, over = false, last = performance.now(), moving = false, held = false, caughtT = 0;
     const SEATS = [140, 124, 104, 84, 64, 44];
     let nextSeat = 0;
     const end = res => { if (over) return; over = true; window.MINI = null; setTimeout(() => done(res), FAST ? 30 : 1600); };
@@ -126,22 +126,29 @@ function inspector() {
     document.addEventListener("keyup", up, { once: false });
     document.getElementById("mgquit").remove();
     const samImg = { l: look("sam", "left"), d: look("sam", "down") }, ins = { l: look("inspector", "left"), d: look("inspector", "down"), u: look("inspector", "up") };
+    const updSus = () => { const e = document.getElementById("inSus"); if (e) e.textContent = "👁 " + "●".repeat(strikes) + "○".repeat(3 - strikes); };
+    S.msg("He's checking tickets at the far end. Sneak while his head is down!");
     function loop(now) {
       const dt = Math.min(0.05, (now - last) / 1000); last = now;
       const holding = held || window.HELD?.dir === "left";
       if (!over) {
         stT += dt;
         if (state === "walk") { // looking up the aisle: danger
-          insX -= 12 * dt;
-          if (nextSeat < SEATS.length && insX <= SEATS[nextSeat]) { state = "check"; stT = 0; stDur = 1.4 + Math.random() * 1.6; nextSeat++; }
+          insX -= 9 * dt;
+          if (nextSeat < SEATS.length && insX <= SEATS[nextSeat]) { state = "check"; stT = 0; stDur = 2.2 + Math.random() * 1.6; nextSeat++; }
         } else if (state === "check") { // head down: safe
-          warn = stT > stDur - 0.45;
-          if (stT >= stDur) { state = "walk"; stT = 0; warn = false; }
+          warn = stT > stDur - 0.7;
+          if (stT >= stDur) { state = "walk"; stT = 0; warn = false; sus = 0; }
         }
-        moving = holding && samX > 10;
-        if (moving) { samX -= 22 * dt; held = held && true; }
-        if (moving && state === "walk" && insX - samX < 150) { state = "caught"; caughtT = 0; window.PS.sfx.miss(); S.msg("Inspector: OI! You! Tickets please!"); end("caught"); }
-        if (insX - samX < 10 && state !== "caught") { state = "caught"; S.msg("Inspector: Ticket please, sir."); end("caught"); }
+        frozen = Math.max(0, frozen - dt);
+        moving = holding && samX > 10 && !frozen;
+        if (moving) samX -= 28 * dt;
+        // he only notices if you keep moving while he's looking (a short grace as he turns round)
+        if (moving && state === "walk" && stT > 0.35) { sus += dt;
+          if (sus > 0.3) { sus = 0; strikes++; frozen = 1; window.PS.sfx.miss(); updSus();
+            if (strikes >= 3) { state = "caught"; S.msg("Inspector: OI! You! Tickets please!"); end("caught"); }
+            else S.msg(strikes === 1 ? "Inspector: ...Hmm? (Sam pretends to study the window.)" : "Inspector: Something fishy about that one... (one more and you're caught!)"); } }
+        if (insX - samX < 12 && state !== "caught") { state = "caught"; S.msg("Inspector: Ticket please, sir."); end("caught"); }
         if (samX <= 10 && state !== "caught") { state = "hid"; S.msg("Click. ENGAGED. Sam holds his breath..."); end("hid"); }
         const st = document.getElementById("inState");
         if (st) st.textContent = state === "walk" ? "👀 LOOKING! Freeze!" : warn ? "⚠️ He's about to look up!" : state === "check" ? "📋 Checking tickets... sneak!" : "";

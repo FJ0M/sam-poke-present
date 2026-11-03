@@ -378,11 +378,26 @@ function animalSprite(look, step) {
   img.src = P().pixURL(ANIMAL_LOOKS[look]);
   return IMG_CACHE[k] = c;
 }
+// a party critter shrunk to fit one tile (big evolutions keep their shape)
+function followerSprite(sp, step) {
+  const k = "f:" + sp + (step & 1);
+  if (IMG_CACHE[k]) return IMG_CACHE[k];
+  const c = cv(), x = c.getContext("2d");
+  const img = new Image();
+  img.onload = () => {
+    x.imageSmoothingEnabled = false;
+    const s = Math.min(14 / img.width, 14 / img.height), w = Math.max(1, Math.round(img.width * s)), h = Math.max(1, Math.round(img.height * s));
+    x.drawImage(img, Math.round((16 - w) / 2), 16 - h - (step & 1), w, h);
+  };
+  img.src = P().pixURL(sp);
+  return IMG_CACHE[k] = c;
+}
 function charSprite(look, dir, step, bike) { return look.startsWith("tinadead") ? propSprite(look) : ANIMAL_LOOKS[look] ? animalSprite(look, step) : personSprite(look, dir, step, bike); }
 
 // ---------- state ----------
 let active = false, canvas = null, ctx = null, raf = 0;
 let map = null, mapId = null;
+let fol = null;                // lead critter trotting one tile behind Sam
 let pl = null;                 // { x, y, dir, fx, fy, moving, t0, dur, step }
 let npcs = [];
 let busy = false;              // dialog / menu / cutscene
@@ -413,6 +428,7 @@ function loadMap(id, x, y, dir) {
   if (PLACES[id]) st.visited[id] = true;
   if (id === "stroud") { st.flags = st.flags || {}; st.flags.stroud = true; }
   pl = { x, y, dir: st.world.dir, fx: x, fy: y, moving: false, step: 0 };
+  fol = { x, y, sx: x, sy: y, fx: x, fy: y, dir: "left", step: 0 };
   npcs = (map.npcs || []).map(n => ({ ...n, ox: n.x, oy: n.y, fx: n.x, fy: n.y, step: 0, visible: !(n.until && flag(n.until)) && !(n.after && !flag(n.after)), homeDir: n.dir, brewDir: n.dir, wanderT: Math.random() * 3000 }));
   if (map.indoor && st.bike) st.bike = false;
   P().music(map.music === "home" ? "home" : map.music || "explore");
@@ -519,7 +535,8 @@ function update(now, dt) {
   if (pl.moving) {
     const p = Math.min(1, (now - pl.t0) / pl.dur);
     pl.fx = pl.sx + (pl.x - pl.sx) * p; pl.fy = pl.sy + (pl.y - pl.sy) * p;
-    if (p >= 1) { pl.moving = false; pl.fx = pl.x; pl.fy = pl.y; arrived(); }
+    fol.fx = fol.sx + (fol.x - fol.sx) * p; fol.fy = fol.sy + (fol.y - fol.sy) * p;
+    if (p >= 1) { pl.moving = false; pl.fx = pl.x; pl.fy = pl.y; fol.fx = fol.x; fol.fy = fol.y; arrived(); }
   } else if (!busy && window.HELD && window.HELD.dir) {
     tryStep(window.HELD.dir, now);
   }
@@ -557,6 +574,8 @@ function tryStep(dir, now) {
   const L = lockedAt(nx, ny);
   if (L) { showText(L.text); return; }
   if (blocked(nx, ny)) { if (!pl.bumpT || now - pl.bumpT > 300) { pl.bumpT = now; P().beep(110, .05, "square", .03); } return; }
+  fol.sx = fol.x; fol.sy = fol.y; fol.x = pl.x; fol.y = pl.y; fol.step++;
+  if (fol.x !== fol.sx) fol.dir = fol.x > fol.sx ? "right" : "left";
   pl.sx = pl.x; pl.sy = pl.y; pl.x = nx; pl.y = ny; pl.t0 = now; pl.dur = speed(); pl.moving = true; pl.step++;
 }
 
@@ -701,20 +720,33 @@ async function startMenu() {
   const st = S();
   const items = [
     { label: "Team", value: "team" },
+    { label: "Box", value: "box" },
     { label: CONFIG.dexName, value: "dex" },
     { label: "Journal", value: "journal" },
     { label: "Map", value: "map" },
     ...(!map.indoor ? [{ label: st.bike ? "Get off the e-bike" : "Ride the e-bike", value: "bike" }] : []),
+    { label: "Difficulty: " + (P().DIFFS[st.difficulty || "normal"] || P().DIFFS.normal).name, value: "diff" },
     { label: "Save", value: "save" },
     { label: P().isMuted() ? "Sound: off" : "Sound: on", value: "sound" },
     { label: "Close", value: null },
   ];
   const v = await showMenu(null, items);
   if (v === "team") { unmount(); P().teamScreen(); }
+  else if (v === "box") { unmount(); P().boxScreen(); }
   else if (v === "dex") { unmount(); P().dexScreen(); }
   else if (v === "journal") { unmount(); P().journalScreen(); }
   else if (v === "map") { unmount(); P().mapScreen(); }
   else if (v === "bike") { st.bike = !st.bike; P().save(); P().beep(st.bike ? 880 : 440, .08); if (st.bike) P().music("bike"); else P().music(map.music); }
+  else if (v === "diff") {
+    const ds = P().unlockedDiffs();
+    if (ds.length < 2) { await showText(["This first run is on Easy.", "Finish the game to win the Easy trophy and unlock Normal mode!"]); return; }
+    const d = await showMenu("Pick a difficulty", [...ds.map(d => ({ label: P().DIFFS[d].name + " (" + P().DIFFS[d].blurb + ")", value: d })), { label: "Cancel", value: null }]);
+    if (d && d !== st.difficulty) {
+      const was = st.diffFloor;
+      P().setDifficulty(d);
+      await showText([`Difficulty set to ${P().DIFFS[d].name}.`, ...(st.diffFloor !== was ? [`(This run will now earn the ${P().DIFFS[st.diffFloor].name} trophy.)`] : [])]);
+    }
+  }
   else if (v === "save") { P().save(); await showText(["Game saved! (It also saves by itself as you go.)"]); }
   else if (v === "sound") P().toggleMute();
 }
@@ -822,12 +854,17 @@ function draw() {
   const st = S();
   const bike = st.bike && !map.indoor;
   list.push({ img: charSprite("sam", pl.dir, pl.moving ? pl.step : 0, bike), x: pl.fx, y: pl.fy, me: true });
+  // your lead critter follows on foot (not when you're on the e-bike, and only once it has somewhere to stand)
+  const lead = st.team && st.team.find(m => m.hp > 0);
+  if (lead && !bike && fol && !(fol.x === pl.x && fol.y === pl.y))
+    list.push({ img: followerSprite(lead.sp, pl.moving ? fol.step : (tick >> 1)), x: fol.fx, y: fol.fy - 0.05, flip: fol.dir === "right" });
   list.sort((a, b) => a.y - b.y);
   for (const c of list) {
     const X = Math.round(c.x * TS - camX + offX), Y = Math.round(c.y * TS - camY + offY) - 3;
     ctx.fillStyle = "rgba(27,21,48,.25)"; ctx.fillRect(X + 3, Y + 16, 10, 2);
     if (c.aura) { ctx.fillStyle = c.aura; for (let i = 0; i < 5; i++) { const a = (frame * 0.8 + i * 1.26), r = 9; ctx.globalAlpha = 0.7; ctx.fillRect(Math.round(X + 7 + Math.cos(a) * r), Math.round(Y + 8 + Math.sin(a) * r * 0.8), 2, 2); } ctx.globalAlpha = 1; }
     if (c.bob) { ctx.drawImage(c.img, 0, 0, 16, 9, X, Y + 1, 16, 9); ctx.drawImage(c.img, 0, 9, 16, 7, X, Y + 9, 16, 7); } // a little breath
+    else if (c.flip) { ctx.save(); ctx.translate(X + 16, Y); ctx.scale(-1, 1); ctx.drawImage(c.img, 0, 0); ctx.restore(); }
     else ctx.drawImage(c.img, X, Y);
     if (c.brew) baristaProp(c.brew, X, Y);
     if (c.alert) { ctx.fillStyle = "#fff"; ctx.fillRect(X + 5, Y - 12, 6, 10); ctx.fillStyle = "#ef4444"; ctx.fillRect(X + 7, Y - 11, 2, 5); ctx.fillRect(X + 7, Y - 5, 2, 2); }
