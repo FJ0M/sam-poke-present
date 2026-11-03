@@ -263,7 +263,7 @@ function titleScreen() {
   screen(`
     <div class="title">
       <div class="title-sprites">${STARTERS.map(s => sprite(s, "bob")).join("")}</div>
-      <h1>${esc(CONFIG.title)}</h1>
+      <h1 class="logo"><img src="logo.png" alt="${esc(CONFIG.title)}"></h1>
       <p class="sub">${esc(CONFIG.subtitle)}</p>
       ${existing && existing.started ? `<button class="btn big" id="cont">▶ Continue</button>` : ""}
       <button class="btn big ${existing && existing.started ? "ghost" : ""}" id="new">✨ New game</button>
@@ -380,6 +380,25 @@ function teamScreen(msg) {
   on("#back", () => areaScreen());
 }
 
+function journalScreen() {
+  const done = q => q.caught ? Object.keys(S.caught).length >= q.caught : q.flags.every(f => S.flags[f]);
+  const cur = QUESTS.main.find(q => !done(q));
+  const row = (q, isCur) => `<div class="quest ${done(q) ? "done" : isCur ? "cur" : ""}">
+      <b>${done(q) ? "✔" : isCur ? "▶" : "○"} ${esc(q.title)}${q.caught ? ` (${Math.min(q.caught, Object.keys(S.caught).length)}/${q.caught})` : ""}</b>
+      ${!done(q) ? `<small>${esc(q.hint)}</small>` : ""}</div>`;
+  screen(`
+    <div class="page">
+      <h2>📓 Quest Journal</h2>
+      <p class="tiny center">${S.finished ? "Main story complete. Happy birthday, Mr Chicken!" : cur ? "Current: " + esc(cur.title) : ""}</p>
+      <h3>Main quest</h3>
+      ${QUESTS.main.filter((q, i) => done(q) || q === cur).map(q => row(q, q === cur)).join("")}
+      ${cur && QUESTS.main.indexOf(cur) < QUESTS.main.length - 1 ? `<div class="quest locked"><b>○ ???</b></div>` : ""}
+      <h3>Side quests</h3>
+      ${QUESTS.side.map(q => row(q, false)).join("")}
+      <button class="btn" id="back">← Back</button>
+    </div>`);
+  on("#back", () => areaScreen());
+}
 function dexScreen() {
   const list = Object.keys(SPECIES).filter(k => COLLECTABLE.includes(k) || S.seen[k]);
   screen(`
@@ -579,6 +598,54 @@ function foeChooseMove() {
 }
 const foeAttacks = () => useMove("f", foeChooseMove());
 
+// ---------- battle effects ----------
+const FX_STYLE = { fire: "rise", water: "splash", grass: "leaf", flying: "streak", fighting: "impact", psychic: "ring",
+  dark: "shadow", ghost: "wisp", dragon: "rise", normal: "impact" };
+function moveFx(type, el, big) {
+  if (!el) return;
+  const r = el.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  const col = (TYPES[type] || {}).color || "#fff", kind = FX_STYLE[type] || "impact", n = big ? 14 : 10;
+  for (let i = 0; i < n; i++) {
+    const d = document.createElement("i"), a = (i / n) * Math.PI * 2, dist = 40 + Math.random() * 30;
+    d.className = "fx fx-" + kind;
+    d.style.left = (cx + (kind === "rise" || kind === "wisp" ? (Math.random() - .5) * r.width * .7 : 0)) + "px";
+    d.style.top = (cy + (kind === "rise" || kind === "wisp" ? r.height * .3 : 0)) + "px";
+    d.style.setProperty("--c", col);
+    d.style.setProperty("--dx", Math.round(Math.cos(a) * dist) + "px");
+    d.style.setProperty("--dy", Math.round(Math.sin(a) * dist) + "px");
+    d.style.animationDelay = (kind === "ring" ? i * 60 : kind === "streak" ? i * 30 : Math.random() * 120) + "ms";
+    if (kind === "streak") d.style.top = (r.top + (i / n) * r.height) + "px";
+    document.body.appendChild(d);
+    setTimeout(() => d.remove(), 1100);
+  }
+}
+function quake(big) {
+  const b = document.querySelector(".battle"); if (!b) return;
+  b.classList.remove("quake", "quake-big"); void b.offsetWidth; b.classList.add(big ? "quake-big" : "quake");
+}
+function sparkle(el) {
+  if (!el) return; const r = el.getBoundingClientRect();
+  for (let i = 0; i < 8; i++) { const d = document.createElement("i"); d.className = "fx fx-star"; const a = i / 8 * Math.PI * 2;
+    d.style.left = r.left + r.width / 2 + "px"; d.style.top = r.top + r.height / 2 + "px";
+    d.style.setProperty("--dx", Math.round(Math.cos(a) * 60) + "px"); d.style.setProperty("--dy", Math.round(Math.sin(a) * 60) + "px");
+    document.body.appendChild(d); setTimeout(() => d.remove(), 1000); }
+}
+async function throwBall() {
+  const from = document.getElementById("meSprite"), to = document.getElementById("foeSprite");
+  if (!from || !to || !to.animate) return;
+  const a = from.getBoundingClientRect(), b = to.getBoundingClientRect();
+  const ball = document.createElement("div"); ball.className = "thrown"; ball.textContent = CONFIG.ballEmoji;
+  ball.style.left = a.left + a.width / 2 - 18 + "px"; ball.style.top = a.top + 10 + "px"; document.body.appendChild(ball);
+  const dx = (b.left + b.width / 2) - (a.left + a.width / 2), dy = (b.top + b.height / 2) - (a.top + 10);
+  await ball.animate([
+    { transform: "translate(0,0) rotate(0)" },
+    { transform: `translate(${dx * .5}px,${dy - 90}px) rotate(360deg)`, offset: .5 },
+    { transform: `translate(${dx}px,${dy}px) rotate(720deg)` }], { duration: 650, easing: "linear" }).finished.catch(() => {});
+  ball.remove();
+  sfx.hit(); to.classList.add("suck");
+  await new Promise(r => setTimeout(r, 420));
+}
+
 // returns true if the battle flow was taken over (faint handling / battle end)
 async function useMove(who, id) {
   const atkM = who === "p" ? me() : foe(), defM = who === "p" ? foe() : me();
@@ -598,7 +665,7 @@ async function useMove(who, id) {
       await say(`${monName(atkM)} feels refreshed!`);
     } else if (mv.effect === "atkUp") { aSt.atk = Math.min(6, aSt.atk + 1); sfx.level(); await say(`${monName(atkM)}'s attack rose!`); }
     else if (mv.effect === "spdUp") { aSt.spd = Math.min(6, aSt.spd + 1); await say(`${monName(atkM)} got faster!`); }
-    else if (mv.effect === "defDown") { dSt.def = Math.max(-6, dSt.def - 1); sfx.wobble(); await say(`${monName(defM)}'s defence fell!`); }
+    else if (mv.effect === "defDown") { dSt.def = Math.max(-6, dSt.def - 1); sfx.wobble(); moveFx(mv.type, document.getElementById(who === "p" ? "foeSprite" : "meSprite")); await say(`${monName(defM)}'s defence fell!`); }
     return false;
   }
 
@@ -616,6 +683,7 @@ async function useMove(who, id) {
   renderBattleKeepMsg();
   const hitEl = document.getElementById(who === "p" ? "foeSprite" : "meSprite");
   if (hitEl) { hitEl.className = ""; void hitEl.offsetWidth; hitEl.classList.add("hit"); hitEl.style.setProperty("--hc", TYPES[mv.type].color); }
+  moveFx(mv.type, hitEl, eff > 1 || crit > 1); quake(eff > 1 || crit > 1 || dmg > stats(defM).hp * 0.4);
   if (crit > 1) await say("A critical hit!", 900);
   if (eff > 1) await say("It's super effective!", 900);
   if (eff < 1) await say("It's not very effective...", 900);
@@ -633,25 +701,30 @@ async function useMove(who, id) {
 
 function renderBattleKeepMsg() {
   const msg = document.getElementById("msg")?.innerHTML || "";
+  const oldW = [...document.querySelectorAll(".hpbar div")].map(d => d.style.width);
   const shakeFoe = document.getElementById("foeSprite")?.classList.contains("shake");
   const shakeMe = document.getElementById("meSprite")?.classList.contains("shake");
   renderBattle();
   document.getElementById("msg").innerHTML = msg;
+  const bars = [...document.querySelectorAll(".hpbar div")];
+  if (bars.length === oldW.length) bars.forEach((d, i) => { const w = d.style.width; if (w !== oldW[i]) { d.style.transition = "none"; d.style.width = oldW[i]; void d.offsetWidth; d.style.transition = ""; d.style.width = w; } });
   if (shakeFoe) document.getElementById("foeSprite").classList.add("shake");
   if (shakeMe) document.getElementById("meSprite").classList.add("shake");
 }
 
 async function tryCatch() {
   const f = foe(), max = stats(f).hp, rate = SPECIES[f.sp].catchRate;
-  await say(`You threw a ${CONFIG.ballName}!`, 800);
+  say(`You threw a ${CONFIG.ballName}!`, 800);
+  await throwBall();
   const el = document.getElementById("foeSprite");
-  if (el) el.innerHTML = `<div class="ball-anim">${CONFIG.ballEmoji}</div>`;
+  if (el) { el.classList.remove("suck"); el.innerHTML = `<div class="ball-anim drop">${CONFIG.ballEmoji}</div>`; }
+  await new Promise(r => setTimeout(r, 450));
   const chance = rate * (1.15 - 0.85 * f.hp / max);
   const ok = Math.random() < chance;
   const wobbles = ok ? 3 : rnd(0, 2);
   for (let i = 0; i < wobbles; i++) { sfx.wobble(); el?.firstChild?.classList.add("wob"); await say("...".slice(0, i + 1), 600); el?.firstChild?.classList.remove("wob"); }
   if (ok) {
-    sfx.catch();
+    sfx.catch(); sparkle(el);
     await say(`Gotcha! ${monName(f)} was caught!`);
     S.caught[f.sp] = true;
     f.uid = S.uid++;
@@ -662,6 +735,7 @@ async function tryCatch() {
     return true;
   }
   renderBattleKeepMsg();
+  const fs = document.getElementById("foeSprite"); if (fs) { fs.className = ""; void fs.offsetWidth; fs.classList.add("popout"); }
   await say(pick(["Argh! So close!", "It broke free!", "Almost had it!"]));
   return false;
 }
@@ -880,7 +954,7 @@ document.addEventListener("keydown", e => {
 // ---------- helpers for world.js ----------
 window.PS = {
   S: () => S, save, music, sfx, beep, toggleMute, isMuted: () => muted, screen, esc, fill, heroName,
-  healAll, makeMon, startBattle, teamScreen, dexScreen, giveStarters, pixURL,
+  healAll, makeMon, startBattle, teamScreen, dexScreen, journalScreen, giveStarters, pixURL,
   alive: () => alive(S.team),
 };
 

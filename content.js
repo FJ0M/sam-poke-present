@@ -148,8 +148,8 @@ const SPECIES = {
              { tint: 25, flavor: "A flash of blue and orange over the canal. Blink and you'll miss it." }),
   heronimo:  sp("Heronimo", "🦩", "water", [58,66,52,52], 60, 0.5, [[1,"peck"],[1,"judgy-stare"],[12,"canal-splash"],[17,"tidal-bore"]],
              { tint: 200, flavor: "Stands perfectly still on one leg for hours. Then: chaos." }),
-  severnboar:sp("Severn Boar", "🐗", "water", [90,95,80,75], 150, 0.12, [[1,"tidal-bore"],[1,"canal-splash"],[1,"deadlift"],[1,"zoomies"]],
-             { badge: "🌊", legendary: true, flavor: "LEGENDARY. Rides the great tidal wave up the River Severn twice a day. Surfers follow it for miles." }),
+  severnboar:sp("Severn Boar", "🐗", "water", [90,95,80,75], 150, 0.25, [[1,"tidal-bore"],[1,"canal-splash"],[1,"deadlift"],[1,"zoomies"]],
+             { badge: "🌊", legendary: true, flavor: "LEGENDARY. ★★★★★ Rides the Severn Bore, the tidal wave that surges UP the River Severn on the biggest spring tides. Surfers chase it for miles. Only seen at Framilode, and only once." }),
 
   // --- Stroud ---
   scarlemoth:sp("Scarlemoth", "🦋", "fire", [48,62,44,64], 55, 0.55, [[1,"hot-sip"],[1,"wing-slap"],[11,"scarlet-blaze"]],
@@ -205,7 +205,7 @@ const SPECIES = {
   gerty:   sp("Gerty", "🦮", "water", [62,58,55,50], 60, 0, [[1,"spit-take"],[1,"slobber"],[1,"canal-splash"],[8,"zoomies"]],
            { tint: -20, flavor: "Jaz and Kim's dog. Has never once walked past a puddle." }),
   oswald:  sp("Oswald", "🐈", "dark", [58,62,52,62], 60, 0, [[1,"midnight-hiss"],[1,"judgy-stare"],[1,"shadow-pounce"],[1,"cat-nap"]],
-           { tint: 30, flavor: "Jaz and Kim's cat. Outnumbered four to one by dogs. Completely unbothered." }),
+           { flavor: "Jaz and Kim's cat. Outnumbered four to one by dogs. Completely unbothered." }),
   jkrabbit:sp("Jaz & Kim's Rabbit", "🐇", "fighting", [55,60,55,65], 55, 0, [[1,"wall-ball"],[1,"pump-up"],[1,"kettlebell-swing"],[1,"zoomies"]],
            { flavor: "Does box jumps. Thinks CrossFit was its idea." }),
   winnie:  sp("Winnie", "🐕", "fighting", [85,80,70,90], 120, 0, [[1,"zoomies"],[1,"hill-sprint"],[1,"burpee-blitz"],[1,"ultra-marathon"]],
@@ -221,3 +221,24 @@ const SPECIES = {
 };
 
 const STARTERS = ["luce", "spook", "marie"];
+
+// ---------- Quest journal ----------
+// Each quest is done when all its flags are set. Main quests are shown in order: the first unfinished one is "current".
+const QUESTS = {
+  main: [
+    { flags: ["letter"], title: "Check the doormat", hint: "Something came through the letterbox. Head to the hallway." },
+    { flags: ["beat_fg"], title: "Find Freddie & Georgina", hint: "They're in Rough Hands Coffee on Stonehouse High Street, with Ralph and Bonnie. Freddie has your railcard." },
+    { flags: ["beat_jk"], title: "Visit Jaz & Kim", hint: "Their house is on the path from Adelaide Gardens up to the High Street. Six pets. Good luck." },
+    { flags: ["beat_chloe"], title: "See Chloe and Winnie", hint: "Chloe's house is right by Stonehouse station. Train up on Selsley Common first if you need to." },
+    { flags: ["beat_tina"], title: "Sort out the VAT bill", hint: "Tina's office is on Stroud High Street. Take the train from Stonehouse, or walk through Ebley." },
+  ],
+  side: [
+    { flags: ["boar"], title: "Catch the five-star bore", hint: "Head west from Stonehouse to Framilode and talk to the surfer." },
+    { flags: ["beat_coach"], title: "Survive the 6am WOD", hint: "Coach Kev runs the CrossFit box on Merrywalks in Stroud." },
+    { flags: ["beat_bev", "beat_priya"], title: "Take on the Ebley locals", hint: "Boater Bev on the towpath and Parkrunner Priya by the road." },
+    { flags: ["beat_sid"], title: "Out-skate Skater Sid", hint: "He's in the park south of Stroud's railway." },
+    { flags: ["beat_bill", "beat_ursula"], title: "Conquer Selsley Common", hint: "Birdwatcher Bill and Ultra Runner Ursula. The lane south from Ebley, over the canal bridge." },
+    { caught: 20, title: "Catch 20 Samsters", hint: "Wild Samsters hide in tall grass, spinifex and reeds." },
+  ],
+};
+

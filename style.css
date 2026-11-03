@@ -244,3 +244,50 @@ small { display: block; opacity: .75; font-size: .8rem; }
 .enter-p { animation: enterP .5s steps(5); }
 @keyframes enterF { 0% { transform: translateX(160px); } 100% { transform: none; } }
 @keyframes enterP { 0% { transform: translateX(-160px); } 100% { transform: none; } }
+
+/* battle effects */
+.fx { position: fixed; width: 8px; height: 8px; margin: -4px; background: var(--c, #fff); box-shadow: 0 0 0 2px var(--ink, #1b1530);
+  pointer-events: none; z-index: 50; animation: fxBurst .6s steps(6) forwards; opacity: 0; }
+.fx-impact { animation-name: fxBurst; }
+.fx-splash { border-radius: 50% 50% 50% 0; animation-name: fxSplash; }
+.fx-rise { width: 6px; height: 10px; animation-name: fxRise; animation-duration: .8s; }
+.fx-leaf { width: 10px; height: 6px; border-radius: 0 6px; animation-name: fxLeaf; animation-duration: .8s; }
+.fx-streak { width: 40px; height: 3px; margin: 0; left: auto; animation-name: fxStreak; animation-duration: .45s; }
+.fx-ring { width: 20px; height: 20px; margin: -10px; background: none; border: 4px solid var(--c); box-shadow: none; border-radius: 50%; animation-name: fxRing; animation-duration: .7s; }
+.fx-shadow { width: 14px; height: 14px; border-radius: 50%; animation-name: fxShadow; animation-duration: .7s; }
+.fx-wisp { border-radius: 50%; animation-name: fxWisp; animation-duration: 1s; }
+.fx-star { background: #facc15; clip-path: polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%); width: 14px; height: 14px; margin: -7px; box-shadow: none; animation-name: fxBurst; animation-duration: .9s; }
+@keyframes fxBurst { 0% { opacity: 1; transform: translate(0,0) scale(1.4); } 100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(.4); } }
+@keyframes fxSplash { 0% { opacity: 1; transform: translate(0,0); } 60% { opacity: 1; transform: translate(var(--dx), calc(var(--dy) - 30px)); } 100% { opacity: 0; transform: translate(var(--dx), calc(var(--dy) + 30px)); } }
+@keyframes fxRise { 0% { opacity: 1; transform: translateY(0) scaleY(1); } 50% { opacity: 1; transform: translate(4px,-35px) scaleY(1.5); } 100% { opacity: 0; transform: translate(-4px,-70px) scaleY(.5); } }
+@keyframes fxLeaf { 0% { opacity: 1; transform: translate(calc(var(--dx) * -1.2), calc(var(--dy) * -1.2)) rotate(0); } 100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(540deg); } }
+@keyframes fxStreak { 0% { opacity: 1; transform: translateX(-160px); } 100% { opacity: 0; transform: translateX(200px); } }
+@keyframes fxRing { 0% { opacity: 1; transform: scale(.3); } 100% { opacity: 0; transform: scale(4); } }
+@keyframes fxShadow { 0% { opacity: .9; transform: translate(var(--dx), var(--dy)) scale(1.6); } 100% { opacity: 0; transform: translate(0,0) scale(.3); } }
+@keyframes fxWisp { 0% { opacity: 0; transform: translate(0,0); } 30% { opacity: .9; } 50% { transform: translate(10px,-30px); } 100% { opacity: 0; transform: translate(-10px,-70px); } }
+.quake { animation: quake .3s steps(4); }
+.quake-big { animation: quake .5s steps(8); }
+@keyframes quake { 0%,100% { transform: none; } 25% { transform: translate(-5px, 3px); } 50% { transform: translate(5px,-3px); } 75% { transform: translate(-3px,-2px); } }
+.faint { animation: faint .8s steps(8) forwards !important; }
+@keyframes faint { 0% { filter: brightness(3); } 20% { filter: none; transform: none; opacity: 1; } 100% { transform: translateY(70px) scaleY(.4); opacity: 0; } }
+.suck { animation: suck .4s steps(5) forwards; }
+@keyframes suck { 0% { filter: brightness(1); } 30% { filter: brightness(3) sepia(1) hue-rotate(-50deg); } 100% { transform: scale(0); filter: brightness(4); opacity: 0; } }
+.popout { animation: popout .35s steps(5); }
+@keyframes popout { 0% { transform: scale(0); filter: brightness(4); } 100% { transform: scale(1); filter: none; } }
+.thrown { position: fixed; font-size: 36px; width: 36px; height: 36px; line-height: 36px; text-align: center; z-index: 60; pointer-events: none; }
+.ball-anim.drop { animation: balldrop .45s steps(5); }
+@keyframes balldrop { 0% { transform: translateY(-30px); } 60% { transform: translateY(0); } 80% { transform: translateY(-8px); } 100% { transform: none; } }
+.hpbar div { transition: width .7s steps(14); }
+
+/* quest journal */
+.quest { background: #fff; border: 3px solid var(--ink); padding: 8px 10px; margin: 6px 0; box-shadow: var(--shadow); }
+.quest b { display: block; }
+.quest small { display: block; margin-top: 4px; opacity: .85; }
+.quest.cur { background: #fef9c3; }
+.quest.done { opacity: .6; }
+.quest.locked { opacity: .5; border-style: dashed; }
+.page h3 { margin: 14px 0 4px; font-size: .8rem; }
+
+.title h1.logo { margin: 6px 0 2px; text-shadow: none; }
+.title h1.logo img { width: min(92vw, 380px); image-rendering: pixelated; display: block; animation: logoIn .7s steps(7); }
+@keyframes logoIn { 0% { transform: translateY(-40px) scale(.6); opacity: 0; } 100% { transform: none; opacity: 1; } }

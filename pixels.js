@@ -77,24 +77,43 @@ const DOG = [
   "..obwwbbbbwwbo..",
   "...oooooooooo...",
 ];
+// Winnie (from Freddie's photo): ginger Jack Russell cross, huge pink-lined ears, dark muzzle, white chest and paws
+const WINNIE = [
+  "..oo........oo..",
+  ".obio......oibo.",
+  ".obiio....oiibo.",
+  ".obiiio..oiiibo.",
+  "..obbbbbbbbbbo..",
+  "..obdbbbbbbdbo..",
+  "..obekbbbbkebo..",
+  "..obkkbbbbkkbo..",
+  "..obbbmmmmbbbo..",
+  "...obmmnnmmbo...",
+  "...obmmttmmbo...",
+  "....occcccco....",
+  "...obccccccbo...",
+  "..obbccccccbbo..",
+  "..obwbccccbwbo..",
+  "...oooooooooo...",
+];
 // French bulldog: big upright bat ears, squashed face, jowls
 const FRENCHIE = [
-  "................",
-  ".ooo........ooo.",
-  ".oiio......oiio.",
-  ".oiiio....oiiio.",
-  ".obiiooooooiibo.",
-  "..obbbbbbbbbbo..",
-  ".obbbbbbbbbbbbo.",
-  ".obekbbbbbbekbo.",
-  ".obkkbbbbbbkkbo.",
-  ".obbbmmnnmmbbbo.",
-  ".obbmmmmmmmmbbo.",
-  "..obmmmttmmmbo..",
-  "...oobbbbbboo...",
-  "..obbcccccbbbo..",
-  "..obbbbbbbbbbo..",
-  "...oooooooooo...",
+  "..oo........oo..",
+  ".ohio......oiho.",
+  ".ohiio....oiiho.",
+  ".ohhhoooooohhho.",
+  "..ohhphhhhphho..",
+  ".ohhekhhhhkehho.",
+  ".ohhkkhhhhkkhho.",
+  ".ohpphmnnmhppho.",
+  ".ohpmmmmmmmmpho.",
+  "..ohhmmttmmhho..",
+  "...occcccccco...",
+  "..obccccccccbo..",
+  ".obbccccccccbbo.",
+  ".obbsccccccsbbo.",
+  ".obwbwccccwbwbo.",
+  "..oooooooooooo..",
 ];
 // Mr Chicken, in his running headband
 const CHICKEN = [
@@ -120,9 +139,10 @@ const HAND_PIXELS = {
   luce:   () => catPixels("bw", 1),     lucy:   () => catPixels("bw", 2),     lucius:     () => catPixels("bw", 3),
   spook:  () => catPixels("black", 1),  spooks: () => catPixels("black", 2),  spookus:    () => catPixels("black", 3),
   marie:  () => catPixels("calico", 1), marigold: () => catPixels("calico", 2), marigoldus: () => catPixels("calico", 3),
-  winnie: () => ({ grid: DOG, pal: { ...PAL_BASE, b: "#9a5b2e", E: "#6b3d1d", m: "#c8875a", w: "#ffffff", e: "#ffffff" } }),
-  ralph:  () => ({ grid: FRENCHIE, pal: { ...PAL_BASE, b: "#d9b48a", i: "#f5c2c7", m: "#3a2f2a", c: "#d9b48a", t: "#fb7185" }, scale: 0.9 }),
-  bonnie: () => ({ grid: FRENCHIE, pal: { ...PAL_BASE, b: "#4a4249", i: "#9d8c96", m: "#2a2428", c: "#f3f0ea", t: "#fb7185" }, scale: 0.9 }),
+  winnie: () => ({ grid: WINNIE, pal: { ...PAL_BASE, b: "#c27a3a", i: "#f4a6a6", d: "#7a4a22", m: "#3b2418", n: "#1b1530", c: "#fbf7f0", w: "#fbf7f0", e: "#ffffff", k: "#2a1a10", t: "#fb7185" }, scale: 0.85 }),
+  // from Freddie's photo: Ralph is black and tan with a white chest, Bonnie is blue-grey and tan with a white body
+  ralph:  () => ({ grid: FRENCHIE, pal: { ...PAL_BASE, h: "#1f1a1c", i: "#b9a6a0", p: "#c99a62", m: "#4a4244", n: "#111", b: "#1f1a1c", c: "#f4f1ec", s: "#c99a62", w: "#f4f1ec", t: "#fb7185" }, scale: 0.9 }),
+  bonnie: () => ({ grid: FRENCHIE, pal: { ...PAL_BASE, h: "#6d6570", i: "#c4b3b8", p: "#c99a62", m: "#544c57", n: "#2a2428", b: "#f4f1ec", c: "#f4f1ec", s: "#6d6570", w: "#f4f1ec", t: "#fb7185" }, scale: 0.85 }),
   mrchicken: () => ({ grid: CHICKEN, pal: { ...PAL_BASE, b: "#3b82f6" } }),
 };
 const HERO_PIXELS = HAND_PIXELS.mrchicken;
