@@ -790,7 +790,7 @@ async function foeFainted() {
 
 async function playerFainted() {
   if (alive(S.team).length) return switchMenu(true);
-  await say(`${heroName()} is out of usable Samsters!`);
+  await say(`${heroName()} is out of critters that can battle!`);
   healAll();
   endBattle("lose");
 }
@@ -849,7 +849,7 @@ function endingScreen() {
       ${CONFIG.age ? `<div class="age">${esc(CONFIG.age)}</div>` : ""}
       <div class="dialog">${esc(CONFIG.birthdayMessage)}</div>
       <div class="team-row">${S.team.map(m => sprite(m.sp, "sm")).join("")}</div>
-      <p class="tiny">Collected ${Object.keys(S.caught).length}/${COLLECTABLE.length} Samsters</p>
+      <p class="tiny">Collected ${Object.keys(S.caught).length}/${COLLECTABLE.length} critters</p>
       <button class="btn big" id="keep">Keep exploring</button>
     </div>`, "bg-party");
   music("fanfare");

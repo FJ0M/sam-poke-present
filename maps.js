@@ -2,8 +2,8 @@
 //  MAPS — the walkable world. Each map is rows of tile letters.
 //  Stonehouse, Ebley and Stroud are stylised versions of the real places.
 //  Legend (see PAINT in world.js for how each one looks/behaves):
-//   T tree   . grass   , tall grass (wild Samsters)   = path   c cobbles   * flowers
-//   ~ water   r reeds (water Samsters)   B footbridge   # dry stone wall   f fence
+//   T tree   . grass   , tall grass (wild critters)   = path   c cobbles   * flowers
+//   ~ water   r reeds (water critters)   B footbridge   # dry stone wall   f fence
 //   R roof   H house wall   w window   D door   Y Cotswold stone building   S sign
 //   V Sam's van   M market stall   n bench   | railway   X level crossing   P platform
 //   Indoors: W wall  _ wood floor  : carpet  L conservatory tiles  y bathroom tiles
@@ -141,8 +141,8 @@ const MAPS = {
     reeds: [["towpathduck",3,5],["swanky",4,6,4],["kingfizz",4,6,3]],
     npcs: [
       { id: "prof", x: 9, y: 7, look: "prof", dir: "down",
-        text: ["Prof. Doverow: Ah, Mr Chicken! Walk into tall grass and wild Samsters will jump out.",
-               "Prof. Doverow: Weaken them, then throw a Tea Ball to catch them. The reeds by the Ocean hide water Samsters.",
+        text: ["Prof. Doverow: Ah, Mr Chicken! Walk into tall grass and wild critters will jump out.",
+               "Prof. Doverow: Weaken them, then throw a Tea Ball to catch them. The reeds by the Ocean hide water critters.",
                "Prof. Doverow: Hold B to run. Hop on your e-bike from the START menu. And the train goes to Stroud, once you can get to the station!"] },
       { id: "roadworks", x: 30, y: 13, look: "npc2", dir: "left", until: "beat_fg",
         text: ["Roadworks man: Road's blocked, mate. Some bloke's double-parked across it.", "Roadworks man: Says his name's Freddie. He's in Rough Hands with his wife and two snorting dogs."] },

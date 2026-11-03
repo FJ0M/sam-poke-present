@@ -12,13 +12,13 @@ const CONFIG = {
   ballName: "Tea Ball",
   ballEmoji: "🍵",
   dexName: "Samdex",
-  creatureWord: "Samster",
+  creatureWord: "critter",
   professor: "Prof. Doverow",
   forcedName: "Mr Chicken",
   profIntro: [
     "Prof. Doverow: Well hello there! Welcome to the Five Valleys!",
-    "Prof. Doverow: My name is Doverow. People round here call me the Samster Professor. I live up on the hill, mostly.",
-    "Prof. Doverow: From the canal at Stonehouse to the commons above Stroud, these valleys are full of creatures called SAMSTERS.",
+    "Prof. Doverow: My name is Doverow. People round here call me the Critter Professor. I live up on the hill, mostly.",
+    "Prof. Doverow: From the canal at Stonehouse to the commons above Stroud, these valleys are full of creatures called CRITTERS.",
     "Prof. Doverow: Some are cats. Some are birds. One is, I'm told, a wheel of Double Gloucester.",
     "Prof. Doverow: Now then. Tell me a little about yourself.",
   ],
@@ -27,7 +27,7 @@ const CONFIG = {
     "Prof. Doverow: Hmm. No, I don't think that's right.",
     "Prof. Doverow: Your name is MR CHICKEN.",
     "Prof. Doverow: Your wife told me. Everyone calls you that.",
-    "Prof. Doverow: Right then, MR CHICKEN! Your very own Samster adventure is about to begin!",
+    "Prof. Doverow: Right then, MR CHICKEN! Your very own critter adventure is about to begin!",
   ],
   wakeUp: [
     "...",
@@ -161,7 +161,7 @@ const SPECIES = {
   boxroo:    sp("Boxroo", "🦘", "fighting", [52,58,46,66], 52, 0.55, [[1,"wall-ball"],[1,"second-wind"],[10,"burpee-blitz"]],
              { flavor: "Box jumps for fun. 400 of them. Before breakfast." }),
   teapotamus:sp("Teapotamus", "🦛", "water", [74,64,66,40], 65, 0.45, [[1,"spit-take"],[1,"tea-break"],[12,"canal-splash"],[17,"tidal-bore"]],
-             { flavor: "Holds 400 cups of tea. Sam's dream Samster." }),
+             { flavor: "Holds 400 cups of tea. Sam's dream critter." }),
   badgerlad: sp("Badgerlad", "🦡", "dark", [60,64,62,46], 58, 0.5, [[1,"midnight-hiss"],[1,"judgy-stare"],[12,"shadow-pounce"]],
              { flavor: "Comes out at night to raid the bins behind the market." }),
 
@@ -238,7 +238,7 @@ const QUESTS = {
     { flags: ["beat_bev", "beat_priya"], title: "Take on the Ebley locals", hint: "Boater Bev on the towpath and Parkrunner Priya by the road." },
     { flags: ["beat_sid"], title: "Out-skate Skater Sid", hint: "He's in the park south of Stroud's railway." },
     { flags: ["beat_bill", "beat_ursula"], title: "Conquer Selsley Common", hint: "Birdwatcher Bill and Ultra Runner Ursula. The lane south from Ebley, over the canal bridge." },
-    { caught: 20, title: "Catch 20 Samsters", hint: "Wild Samsters hide in tall grass, spinifex and reeds." },
+    { caught: 20, title: "Catch 20 critters", hint: "Wild critters hide in tall grass, spinifex and reeds." },
   ],
 };
 
