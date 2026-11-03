@@ -124,7 +124,11 @@ const MOVES = {
   "builders-brew": M("Builder's Brew", "fire", 90, 85), "scarlet-blaze": M("Stroud Scarlet", "fire", 75, 90),
   // water
   "spit-take": M("Spit Take", "water", 45), "canal-splash": M("Canal Splash", "water", 65, 95),
-  "tidal-bore": M("Tidal Bore", "water", 95, 85), "tea-break": M("Tea Break", "water", 0, 100, "heal"),
+  "tidal-bore": M("Tidal Bore", "water", 95, 85),
+  // the Severn Boar's own moves: all about the Severn Bore tidal wave
+  "five-star-bore": M("Five-Star Bore", "water", 120, 70), "spring-tide": M("Spring Tide", "water", 0, 100, "atkUp"),
+  "upstream-surge": M("Upstream Surge", "water", 70, 100, "spdUp"), "surfer-wipeout": M("Surfer Wipeout", "water", 80, 90, "defDown"),
+  "estuary-roar": M("Estuary Roar", "water", 0, 100, "defDown"), "tea-break": M("Tea Break", "water", 0, 100, "heal"),
   // grass
   "leaf-flick": M("Leaf Flick", "grass", 45), "wild-garlic": M("Wild Garlic Breath", "grass", 65, 95),
   "beechwood-bash": M("Beechwood Bash", "grass", 90, 85),
@@ -215,7 +219,7 @@ const SPECIES = {
              { tint: 25, flavor: "A flash of blue and orange over the canal. Blink and you'll miss it." }),
   heronimo:  sp("Heronimo", "🦩", "water", [58,66,52,52], 60, 0.5, [[1,"peck"],[1,"judgy-stare"],[12,"canal-splash"],[17,"tidal-bore"]],
              { tint: 200, flavor: "Stands perfectly still on one leg for hours. Then: chaos." }),
-  severnboar:sp("Severn Boar", "🐗", "water", [90,95,80,75], 150, 0.25, [[1,"tidal-bore"],[1,"canal-splash"],[1,"deadlift"],[1,"zoomies"]],
+  severnboar:sp("Severn Boar", "🐗", "water", [90,95,80,75], 150, 0.25, [[1,"tidal-bore"],[1,"upstream-surge"],[1,"surfer-wipeout"],[1,"spring-tide"],[30,"five-star-bore"],[30,"estuary-roar"]],
              { badge: "🌊", legendary: true, flavor: "LEGENDARY. ★★★★★ Rides the Severn Bore, the tidal wave that surges UP the River Severn on the biggest spring tides. Surfers chase it for miles. Only seen at Framilode, and only once." }),
 
   // --- Stroud ---

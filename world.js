@@ -701,6 +701,7 @@ async function startMenu() {
   const st = S();
   const items = [
     { label: "Team", value: "team" },
+    { label: "Box", value: "box" },
     { label: CONFIG.dexName, value: "dex" },
     { label: "Journal", value: "journal" },
     { label: "Map", value: "map" },
@@ -711,6 +712,7 @@ async function startMenu() {
   ];
   const v = await showMenu(null, items);
   if (v === "team") { unmount(); P().teamScreen(); }
+  else if (v === "box") { unmount(); P().boxScreen(); }
   else if (v === "dex") { unmount(); P().dexScreen(); }
   else if (v === "journal") { unmount(); P().journalScreen(); }
   else if (v === "map") { unmount(); P().mapScreen(); }

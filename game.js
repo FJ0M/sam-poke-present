@@ -345,7 +345,8 @@ function healAll() {
 }
 
 // ---------- team ----------
-function teamScreen(msg) {
+function boxScreen() { teamScreen(null, true); }
+function teamScreen(msg, boxFirst) {
   const row = (m, where, i) => {
     const st = stats(m);
     return `<div class="card mon">
@@ -366,8 +367,10 @@ function teamScreen(msg) {
     <div class="page">
       <h2>🎒 Team (${S.team.length}/${MAX_TEAM})</h2>
       ${msg ? `<div class="toast">${esc(msg)}</div>` : ""}
+      ${boxFirst ? `<div class="toast">📦 <b>The Box</b> keeps every critter that isn't in your team. Your team holds ${MAX_TEAM}; anything you catch after that goes here automatically.<br>Tap <b>→ Box</b> to put a team member away, and <b>← Team</b> to bring one back. ⭐ Lead picks who goes out first in battle.</div>` : ""}
       ${S.team.map((m, i) => row(m, "team", i)).join("")}
-      ${S.box.length ? `<h3>📦 Box</h3>${S.box.map((m, i) => row(m, "box", i)).join("")}` : ""}
+      <h3 id="boxhead">📦 Box (${S.box.length})</h3>
+      ${S.box.length ? S.box.map((m, i) => row(m, "box", i)).join("") : `<p class="tiny">Empty. Critters you catch when your team is full land here.</p>`}
       <button class="btn" id="back">← Back</button>
     </div>`);
   on("[data-act]", el => {
@@ -375,10 +378,10 @@ function teamScreen(msg) {
     if (act === "lead") { const [m] = S.team.splice(i, 1); S.team.unshift(m); }
     if (act === "tobox") S.box.push(S.team.splice(i, 1)[0]);
     if (act === "toteam") {
-      if (S.team.length >= MAX_TEAM) return teamScreen("Team is full! Move someone to the box first.");
+      if (S.team.length >= MAX_TEAM) return teamScreen("Team is full! Move someone to the box first.", boxFirst);
       S.team.push(S.box.splice(i, 1)[0]);
     }
-    save(); teamScreen();
+    save(); teamScreen(null, boxFirst);
   });
   on("#back", () => areaScreen());
 }
@@ -836,7 +839,8 @@ async function tryCatch() {
     S.caught[f.sp] = true;
     f.uid = S.uid++;
     if (S.team.length < MAX_TEAM) S.team.push(f);
-    else { S.box.push(f); await say(`Your team is full, so ${monName(f)} went to the box.`); }
+    else { S.box.push(f); await say(`Your team is full, so ${monName(f)} went to the Box.`); }
+    if (!S.flags.boxtip) { S.flags.boxtip = true; await say(`Tip: your team holds ${MAX_TEAM} critters. Press START → Box any time to swap critters between your team and the Box.`, 3200); }
     await awardXp(Math.floor(SPECIES[f.sp].xp * f.level / 6));
     await endBattle("catch");
     return true;
@@ -1070,7 +1074,7 @@ document.addEventListener("keydown", e => {
 // ---------- helpers for world.js ----------
 window.PS = {
   S: () => S, save, music, sfx, beep, toggleMute, isMuted: () => muted, screen, esc, fill, heroName,
-  healAll, makeMon, startBattle, teamScreen, dexScreen, journalScreen, mapScreen, endingScreen, evolve, talk, giveStarters, pixURL,
+  healAll, makeMon, startBattle, teamScreen, boxScreen, dexScreen, journalScreen, mapScreen, endingScreen, evolve, talk, giveStarters, pixURL,
   alive: () => alive(S.team),
 };
 

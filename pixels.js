@@ -410,4 +410,125 @@ const HAND_PIXELS = {
   kettlebear: simple(KBEAR, { b: "#7c4a22", w: "#c08a5a", e: "#fff", k: "#1b1530", n: "#1b1530", m: "#3b2418", g: "#374151", G: "#9ca3af" }, 0.86, KBEAR_2),
   mrchicken: () => ({ grid: CHICKEN, pal: { ...PAL_BASE, b: "#3b82f6" } }),
 };
+
+// ---------- WINNIEEEE options: Winnie barking fiercely in her harness, with bark lines ----------
+// Base pose (24x24, faces left): ears up, brows down, jaws wide open, braced on all fours, tail up.
+const WBARK = [
+  "........................",
+  "....oo.....oo...........",
+  "....obo...obo...........",
+  "....obio..obio..........",
+  "....obiio.obiio......o..",
+  "....obiiooobiio.....obo.",
+  ".....obbbbbbbbo.....obo.",
+  "....obbdbbbbdbbo...obo..",
+  "....obooebbooebo...obo..",
+  "....obbkkbbbkkbo..obo...",
+  "...obbbbbbbbbbbo..obo...",
+  "..onmmmbbbbbbbbboooobo..",
+  "..ommmmmbbbbbbbbbbbbbo..",
+  "..ofrrfrmbbbbbbbbbbbbo..",
+  "..orrrrrmbbbbbbbbbbbbo..",
+  "...otttmmccbbbbbbbbbbo..",
+  "....ooommcccbbbbbbbbbo..",
+  "......occccbbbbbbbbbbo..",
+  "......occcbbbbbbbbbbbo..",
+  "......obbcooooooooobbo..",
+  "......owwo.owwo..owwo...",
+  "......owwo.owwo..owwo...",
+  ".....owwwoowwwo.owwwo...",
+  ".....ooooooooo..ooooo...",
+];
+// harness: H strap, h strap shade, D ring
+const HARNESS = ["", "", "", "", "", "", "", "", "", "",
+  "...........D............",
+  "..........HHhh..........",
+  "..........Hh..HH........",
+  "..........Hh..Hh........",
+  "..........Hh..Hh........",
+  "..........Hh..Hh........",
+  "..........Hh..Hh........",
+  "..........HHHHHh........",
+  "..........Hh..Hh........"];
+// tactical harness with a grab handle on top
+const HARNESS_TAC = overlay(HARNESS, ["", "", "", "", "", "", "", "", "",
+  "...........ooo..........",
+  "..........oD.o..........",
+  "", "", "", "", "",
+  "..........HHHHHh........"]);
+const BARK_ARCS = ["", "", "", "", "", "",
+  "..L.....................",
+  ".L......................",
+  "L...L...................",
+  "L..L....................",
+  "L..L....................",
+  "L..L....................",
+  "L...L...................",
+  ".L......................",
+  "..L....................."];
+const BARK_ZIGZAG = ["", "", "", "",
+  "L.......................",
+  ".L......................",
+  "L.......................",
+  ".L......................",
+  "L.......................",
+  "", "",
+  "LL......................",
+  "", "",
+  "L.......................",
+  ".L......................",
+  "L.......................",
+  ".L......................",
+  "L......................."];
+const BARK_BURST = ["", "", "",
+  "L.......................",
+  ".L......................",
+  "..L.....................",
+  "", "", "", "",
+  "LL......................",
+  "", "",
+  "LLL.....................",
+  "", "",
+  "LL......................",
+  "", "",
+  "..L.....................",
+  ".L......................",
+  "L......................."];
+const BARK_RINGS = ["", "", "", "", "", "", "", "",
+  ".LL.....................",
+  "L..L....................",
+  "L..L....................",
+  ".LL.....................",
+  "", "",
+  ".L......................",
+  "L.L.....................",
+  ".L......................"];
+// hackles up along the back (fiercer)
+const HACKLES = ["", "", "", "", "", "", "", "", "",
+  "...........o.o.o........",
+  "..........obobobo.......",];
+// taut lead trailing back to the right edge
+const LEAD = ["", "", "", "", "", "", "", "",
+  ".....................ll.",
+  "...................ll..l",
+  ".................ll.....",
+  "...............ll.......",
+  "............Dll........."];
+const AURA_ZAP = ["", "",
+  "...................A....",
+  "..................a.....",
+  ".................aA.....",
+  "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+  "a......................a",
+  "Aa....................aA",
+  ".a.....................a"];
+const WPAL = { b: "#c27a3a", i: "#f4a6a6", d: "#7a4a22", m: "#3b2418", n: "#1b1530", c: "#fbf7f0", w: "#fbf7f0", k: "#2a1a10", t: "#fb7185", r: "#7f1d1d", f: "#ffffff" };
+const WINNIEEEE_OPTIONS = {
+  a: { name: "A: Classic bark", grid: overlay(WBARK, HARNESS, BARK_ARCS), pal: { H: "#dc2626", h: "#991b1b", D: "#e5e7eb", L: "#ffffff" } },
+  b: { name: "B: Hackles up", grid: overlay(WBARK, HACKLES, HARNESS, BARK_ZIGZAG), pal: { H: "#2563eb", h: "#1e3a8a", D: "#facc15", L: "#fde047" } },
+  c: { name: "C: Tactical", grid: overlay(WBARK, HACKLES, HARNESS_TAC, BARK_BURST), pal: { H: "#1f2937", h: "#111827", D: "#9ca3af", L: "#f97316" } },
+  d: { name: "D: Straining at the lead", grid: overlay(WBARK, HARNESS, LEAD, BARK_RINGS), pal: { H: "#db2777", h: "#9d174d", D: "#e5e7eb", L: "#ffffff", l: "#78350f" } },
+  e: { name: "E: Supercharged", grid: overlay(WBARK, HACKLES, HARNESS, BARK_ARCS, AURA_ZAP), pal: { H: "#facc15", h: "#ca8a04", D: "#1f2937", L: "#fde047", a: "#facc15", A: "#fef08a" } },
+};
+for (const k in WINNIEEEE_OPTIONS) HAND_PIXELS["winnieeee_" + k] = () => ({ grid: WINNIEEEE_OPTIONS[k].grid, pal: { ...PAL_BASE, ...WPAL, ...WINNIEEEE_OPTIONS[k].pal }, scale: 1, frames: [] });
 const HERO_PIXELS = HAND_PIXELS.mrchicken;
