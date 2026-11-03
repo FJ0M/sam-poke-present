@@ -48,6 +48,8 @@ const sfx = {
   catch: () => [784, 988, 1175].forEach((f, i) => setTimeout(() => beep(f, 0.12, "triangle", 0.07), i * 120)),
   wobble: () => beep(220, 0.1, "triangle", 0.06),
   heal: () => [440, 554, 659, 880].forEach((f, i) => setTimeout(() => beep(f, 0.12, "sine", 0.06), i * 110)),
+  miss: () => beep(140, 0.25, "square", 0.06, -60),
+  beep: (f, d) => beep(f, d, "square", 0.05),
   bawk: () => { beep(700, 0.07, "square", 0.07, 250); setTimeout(() => beep(1100, 0.07, "square", 0.07, -200), 90);
                 setTimeout(() => beep(1300, 0.28, "sawtooth", 0.06, -900), 190); },
 };
@@ -175,7 +177,7 @@ const stageMul = s => s >= 0 ? (2 + s) / 2 : 2 / (2 - s);
 // ---------- pixel art ----------
 const PIX = {};
 function gridToURL({ grid, pal }) {
-  const c = document.createElement("canvas"); c.width = 16; c.height = 16;
+  const c = document.createElement("canvas"); c.width = grid[0].length; c.height = grid.length;
   const x = c.getContext("2d");
   grid.forEach((row, j) => [...row].forEach((ch, i) => { if (ch !== ".") { x.fillStyle = pal[ch]; x.fillRect(i, j, 1, 1); } }));
   return c.toDataURL();
@@ -190,6 +192,7 @@ function emojiToURL(emoji, n = 22, opts = {}) {
   if (opts.tint) x.filter = `hue-rotate(${opts.tint}deg) saturate(1.2)`;
   x.save();
   if (opts.squash) { x.translate(n / 2, n); x.scale(1.06, 0.9); x.translate(-n / 2, -n); }
+  if (opts.lean) { x.translate(n / 2, n); x.rotate(-0.18); x.scale(1.08, 1.04); x.translate(-n / 2 - 1, -n); }
   x.font = font(Math.floor(n * 0.78));
   x.fillText(emoji, n / 2, n / 2 + 1);
   x.restore();
@@ -220,8 +223,8 @@ function pixURL(sp, f = 0) {
   if (PIX[k]) return PIX[k];
   const s = SPECIES[sp];
   const hand = typeof HAND_PIXELS !== "undefined" && HAND_PIXELS[sp];
-  if (hand) return PIX[k] = gridToURL(f ? blinkGrid(hand()) : hand());
-  return PIX[k] = emojiToURL(s.emoji, 22, { tint: s.tint, badge: s.badge, squash: !!f });
+  if (hand) { const h = hand(); const g = f && h.frames ? h.frames[f - 1] : f ? blinkGrid(h).grid : h.grid; return PIX[k] = gridToURL({ grid: g, pal: h.pal }); }
+  return PIX[k] = emojiToURL(s.emoji, 22, { tint: s.tint, badge: s.badge, squash: f === 1, lean: f === 2 });
 }
 function pixScale(sp) {
   const hand = typeof HAND_PIXELS !== "undefined" && HAND_PIXELS[sp];
@@ -235,7 +238,7 @@ function sprite(sp, cls = "") {
   const s = SPECIES[sp], t = TYPES[s.type];
   const delay = (sp.length * 137 % 900) / 1000;
   return `<div class="sprite ${cls} ${s.boss ? "boss" : ""} ${s.legendary ? "legend" : ""}" style="--tc:${t.color};--sc:${pixScale(sp)}">
-    <div class="anim" style="animation-delay:-${delay}s"><img class="pix f1" src="${pixURL(sp, 0)}" alt="${esc(s.name)}"><img class="pix f2" src="${pixURL(sp, 1)}" alt=""></div></div>`;
+    <div class="anim" style="animation-delay:-${delay}s"><img class="pix f1" src="${pixURL(sp, 0)}" alt="${esc(s.name)}"><img class="pix f2" src="${pixURL(sp, 1)}" alt=""><img class="pix f3" src="${pixURL(sp, 2)}" alt=""></div></div>`;
 }
 function typeTag(type) {
   const t = TYPES[type];
@@ -472,15 +475,20 @@ function startBattle(opts) {
   B.foes.forEach(f => S.seen[f.sp] = true);
   music(B.trainer && B.trainer.boss ? "boss" : "battle");
   B.participants.add(S.team[B.pi].uid);
-  B.enter = "f"; renderBattle(); B.enter = null;
+  B.look = opts.look || null;
+  B.tF = !B.wild; B.tP = true; B.hideF = !B.wild; B.hideP = true;
+  B.enter = B.wild ? "f" : null; renderBattle(); B.enter = null;
   (async () => {
     if (B.wild) await say(`A wild ${monName(foe())} appeared!`);
     else {
       await say(`${B.trainer.name} wants to battle!`);
-      await say(`${B.trainer.name} sent out ${monName(foe())}!`);
+      await trainerOut("f");
+      say(`${B.trainer.name} sent out ${monName(foe())}!`, 1200);
+      await sendOut("f"); await wait(500);
     }
-    const ms = document.getElementById("meSprite"); if (ms) { ms.className = ""; void ms.offsetWidth; ms.classList.add("enter-p"); }
-    await say(`Go, ${monName(me())}!`);
+    await trainerOut("p");
+    say(`Go, ${monName(me())}!`, 1000);
+    await sendOut("p"); await wait(400);
     menu();
   })();
 }
@@ -492,16 +500,18 @@ function renderBattle() {
   screen(`
     <div class="battle" style="background:linear-gradient(180deg,${bg[0]},${bg[1]})">
       <div class="side foe">
-        <div class="plate">
+        <div class="plate ${B.hideF ? "hidden-plate" : ""}">
           <b>${monName(f)}</b> <span>Lv${f.level}</span> ${typeTag(SPECIES[f.sp].type)}
           ${hpBar(f)}
           ${B.trainer ? `<small>${B.foes.map(m => m.hp > 0 ? "●" : "○").join(" ")}</small>` : ""}
         </div>
-        <div id="foeSprite" class="${B.enter === "f" ? "enter-f" : ""}">${sprite(f.sp)}</div>
+        <div id="foeSprite" class="${B.hideF ? "gone" : B.enter === "f" ? "enter-f" : ""}">${sprite(f.sp)}</div>
+        ${B.tF && B.look ? `<img class="pix trainer t-foe" src="${WORLD.look(B.look, "down").toDataURL()}" alt="${esc(B.trainer.name)}">` : ""}
       </div>
       <div class="side me">
-        <div id="meSprite" class="${B.enter === "p" ? "enter-p" : ""}">${sprite(p.sp, "back")}</div>
-        <div class="plate">
+        <div id="meSprite" class="${B.hideP ? "gone" : B.enter === "p" ? "enter-p" : ""}">${sprite(p.sp, "back")}</div>
+        ${B.tP ? `<img class="pix trainer t-me" src="${WORLD.look("sam", "up").toDataURL()}" alt="Sam">` : ""}
+        <div class="plate ${B.hideP ? "hidden-plate" : ""}">
           <b>${monName(p)}</b> <span>Lv${p.level}</span> ${typeTag(SPECIES[p.sp].type)}
           ${hpBar(p)}<small>${p.hp}/${stats(p).hp} HP</small>
           <div class="xpbar"><div style="width:${Math.min(100, p.xp / xpNeed(p.level) * 100)}%"></div></div>
@@ -576,8 +586,8 @@ function switchMenu(forced) {
     const i = +el.dataset.s;
     if (forced) {
       B.pi = i; B.stage.p = { atk: 0, def: 0, spd: 0 }; B.participants.add(me().uid);
-      renderBattle();
-      (async () => { await say(`Go, ${monName(me())}!`); menu(); })();
+      B.hideP = true; renderBattle();
+      (async () => { say(`Go, ${monName(me())}!`, 1000); await sendOut("p"); await wait(400); menu(); })();
     } else turn({ kind: "switch", i });
   });
   on("[data-back]", () => menu());
@@ -594,10 +604,10 @@ async function turn(action) {
     return endBattle("run");
   }
   if (action.kind === "switch") {
-    await say(`Come back, ${monName(p)}!`);
+    say(`Come back, ${monName(p)}!`, 900); await recall("p"); await wait(400);
     B.pi = action.i; B.stage.p = { atk: 0, def: 0, spd: 0 }; B.participants.add(me().uid);
     renderBattle();
-    await say(`Go, ${monName(me())}!`);
+    say(`Go, ${monName(me())}!`, 1000); await sendOut("p"); await wait(400);
     if (await foeAttacks()) return;
     return menu();
   }
@@ -668,20 +678,73 @@ function sparkle(el) {
     d.style.setProperty("--dx", Math.round(Math.cos(a) * 60) + "px"); d.style.setProperty("--dy", Math.round(Math.sin(a) * 60) + "px");
     document.body.appendChild(d); setTimeout(() => d.remove(), 1000); }
 }
+// ---------- mugs: critters live in mugs, like a cosy coffee shop version of a capsule ----------
+const mugURL = () => PIX.mug = PIX.mug || gridToURL({ grid: MUG, pal: MUG_PAL });
+const mugImg = (cls = "") => `<img class="pix mugimg ${cls}" src="${mugURL()}" alt="mug">`;
+// the caught critter peeking over the rim: head and front paws
+const mugPeek = sp => `<div class="mugpeek"><div class="peek"><img class="pix" src="${pixURL(sp, 0)}" alt=""></div><i class="paw l"></i><i class="paw r"></i>${mugImg()}</div>`;
+const wait = ms => new Promise(r => setTimeout(r, ms * SPEED));
+// fly a mug from (x0,y0) to the centre of el
+async function flyMug(x0, y0, el, spin = 720, ms = 600) {
+  if (!el || !el.animate) return;
+  const b = el.getBoundingClientRect();
+  const m = document.createElement("div"); m.className = "thrown"; m.innerHTML = mugImg();
+  m.style.left = x0 - 24 + "px"; m.style.top = y0 - 24 + "px"; document.body.appendChild(m);
+  const dx = (b.left + b.width / 2) - x0, dy = (b.top + b.height / 2) - y0;
+  await m.animate([
+    { transform: "translate(0,0) rotate(0)" },
+    { transform: `translate(${dx * .5}px,${dy - 80}px) rotate(${spin / 2}deg)`, offset: .5 },
+    { transform: `translate(${dx}px,${dy}px) rotate(${spin}deg)` }], { duration: ms * Math.max(SPEED, .3), easing: "linear" }).finished.catch(() => {});
+  m.remove();
+}
+// a critter comes out of its mug
+async function sendOut(side) {
+  const id = side === "f" ? "foeSprite" : "meSprite", el = document.getElementById(id);
+  if (side === "f") B.hideF = false; else B.hideP = false;
+  if (!el) return;
+  const bx = document.querySelector(".battle").getBoundingClientRect();
+  if (side === "f") await flyMug(bx.right - 10, bx.top + 20, el, -540, 500); else await flyMug(bx.left + 10, bx.bottom - 30, el, 540, 500);
+  sfx.hit && sfx.hit(); burst(el);
+  el.classList.remove("gone"); el.classList.remove("popout"); void el.offsetWidth; el.classList.add("popout");
+  el.parentNode.querySelector(".plate")?.classList.remove("hidden-plate");
+  await wait(300);
+}
+// a critter goes back into its mug
+async function recall(side) {
+  const el = document.getElementById(side === "f" ? "foeSprite" : "meSprite");
+  if (el) { el.className = ""; void el.offsetWidth; el.classList.add("suck"); }
+  await wait(420);
+  if (side === "f") B.hideF = true; else B.hideP = true;
+  if (el) { el.className = "gone"; }
+}
+function smash(el) {
+  const r = el.getBoundingClientRect();
+  for (let i = 0; i < 9; i++) { const d = document.createElement("i"); d.className = "fx shard"; const a = -Math.PI * (0.1 + 0.8 * i / 8);
+    d.style.left = r.left + r.width / 2 + "px"; d.style.top = r.top + r.height * 0.7 + "px"; d.style.background = i % 3 ? "#166534" : "#f8fafc";
+    d.style.setProperty("--dx", Math.round(Math.cos(a) * (40 + i * 4)) + "px"); d.style.setProperty("--dy", Math.round(Math.sin(a) * 50) + "px");
+    document.body.appendChild(d); setTimeout(() => d.remove(), 800); }
+}
+function burst(el) {
+  const r = el.getBoundingClientRect();
+  for (let i = 0; i < 10; i++) { const d = document.createElement("i"); d.className = "fx fx-star"; const a = i / 10 * Math.PI * 2;
+    d.style.left = r.left + r.width / 2 + "px"; d.style.top = r.top + r.height / 2 + "px";
+    d.style.setProperty("--dx", Math.round(Math.cos(a) * 45) + "px"); d.style.setProperty("--dy", Math.round(Math.sin(a) * 45) + "px");
+    document.body.appendChild(d); setTimeout(() => d.remove(), 900); }
+}
+// trainers slide away before sending out their critter
+async function trainerOut(side) {
+  const t = document.querySelector(side === "f" ? ".trainer.t-foe" : ".trainer.t-me");
+  if (side === "f") B.tF = false; else B.tP = false;
+  if (!t) return;
+  t.classList.add(side === "f" ? "t-out-f" : "t-out-p");
+  await wait(380); t.remove();
+}
 async function throwBall() {
   const from = document.getElementById("meSprite"), to = document.getElementById("foeSprite");
   if (!from || !to || !to.animate) return;
-  const a = from.getBoundingClientRect(), b = to.getBoundingClientRect();
-  const ball = document.createElement("div"); ball.className = "thrown"; ball.textContent = CONFIG.ballEmoji;
-  ball.style.left = a.left + a.width / 2 - 18 + "px"; ball.style.top = a.top + 10 + "px"; document.body.appendChild(ball);
-  const dx = (b.left + b.width / 2) - (a.left + a.width / 2), dy = (b.top + b.height / 2) - (a.top + 10);
-  await ball.animate([
-    { transform: "translate(0,0) rotate(0)" },
-    { transform: `translate(${dx * .5}px,${dy - 90}px) rotate(360deg)`, offset: .5 },
-    { transform: `translate(${dx}px,${dy}px) rotate(720deg)` }], { duration: 650, easing: "linear" }).finished.catch(() => {});
-  ball.remove();
-  sfx.hit(); to.classList.add("suck");
-  await new Promise(r => setTimeout(r, 420));
+  const a = from.getBoundingClientRect();
+  await flyMug(a.left + a.width / 2, a.top + 10, to, 900, 650); // ends upside down
+  sfx.hit();
 }
 
 // returns true if the battle flow was taken over (faint handling / battle end)
@@ -691,7 +754,8 @@ async function useMove(who, id) {
   const mv = MOVES[id];
   const prefix = who === "f" ? (B.wild ? "Wild " : "Foe ") : "";
   const atkEl = document.getElementById(who === "p" ? "meSprite" : "foeSprite");
-  if (atkEl) { atkEl.className = ""; void atkEl.offsetWidth; atkEl.classList.add(mv.power ? (who === "p" ? "lunge-p" : "lunge-f") : "buff"); }
+  if (atkEl) { atkEl.className = ""; void atkEl.offsetWidth; atkEl.classList.add(mv.power ? (who === "p" ? "lunge-p" : "lunge-f") : "buff");
+    setTimeout(() => atkEl.classList.remove("lunge-p", "lunge-f", "buff"), 600); }
   await say(`${prefix}${monName(atkM)} used ${mv.name}!`, 900);
 
   if (Math.random() * 100 > mv.acc) { await say("But it missed!"); return false; }
@@ -756,13 +820,17 @@ async function tryCatch() {
   say(`You threw a ${CONFIG.ballName}!`, 800);
   await throwBall();
   const el = document.getElementById("foeSprite");
-  if (el) { el.classList.remove("suck"); el.innerHTML = `<div class="ball-anim drop">${CONFIG.ballEmoji}</div>`; }
-  await new Promise(r => setTimeout(r, 450));
+  // the mug comes down upside down over the critter, like catching a spider under a glass
+  if (el) { const under = el.querySelector(".sprite .f1")?.src || pixURL(f.sp, 0);
+    el.innerHTML = `<div class="ball-anim cover"><img class="pix under" src="${under}" alt="">${mugImg("inv")}</div>`; }
+  await new Promise(r => setTimeout(r, 600));
   const chance = rate * (1.15 - 0.85 * f.hp / max);
   const ok = Math.random() < chance;
   const wobbles = ok ? 3 : rnd(0, 2);
   for (let i = 0; i < wobbles; i++) { sfx.wobble(); el?.firstChild?.classList.add("wob"); await say("...".slice(0, i + 1), 600); el?.firstChild?.classList.remove("wob"); }
   if (ok) {
+    // it settles... then Sam flips it the right way up and the critter peeks over the rim
+    if (el) { el.firstChild?.classList.add("settle"); sfx.hit(); await wait(500); el.firstChild?.classList.add("flip"); await wait(450); el.innerHTML = `<div class="ball-anim peekin">${mugPeek(f.sp)}</div>`; }
     sfx.catch(); sparkle(el);
     await say(`Gotcha! ${monName(f)} was caught!`);
     S.caught[f.sp] = true;
@@ -773,9 +841,11 @@ async function tryCatch() {
     await endBattle("catch");
     return true;
   }
+  // it escapes: the mug tips over and smashes
+  if (el) { el.firstChild?.classList.add("tip"); await wait(380); sfx.miss(); smash(el); el.innerHTML = ""; }
   renderBattleKeepMsg();
   const fs = document.getElementById("foeSprite"); if (fs) { fs.className = ""; void fs.offsetWidth; fs.classList.add("popout"); }
-  await say(pick(["Argh! So close!", "It broke free!", "Almost had it!"]));
+  await say(pick(["Argh! The mug smashed!", "It broke free! RIP mug.", "Almost had it! Sweeping up the pieces..."]));
   return false;
 }
 
@@ -814,9 +884,9 @@ async function foeFainted() {
   await awardXp(Math.floor(SPECIES[f.sp].xp * f.level / (B.wild ? 6 : 4.5)));
   if (B.fi < B.foes.length - 1 && alive(B.foes).length) {
     B.fi++; B.stage.f = { atk: 0, def: 0, spd: 0 };
-    renderBattle();
-    B.enter = "f"; renderBattle(); B.enter = null;
-    await say(`${B.trainer.name} sent out ${monName(foe())}!`);
+    B.hideF = true; renderBattle();
+    say(`${B.trainer.name} sent out ${monName(foe())}!`, 1200);
+    await sendOut("f"); await wait(500);
     return menu();
   }
   if (B.trainer) {
@@ -945,6 +1015,7 @@ function navMove(dir) {
 }
 window.HELD = { dir: null, b: false };
 function press(key) {
+  if (window.MINI && window.MINI.key(key)) return;
   if (WORLD.active && !B && WORLD.key(key)) return;
   if (key === "up" || key === "down" || key === "left" || key === "right") return navMove(key);
   if (sayResolve && (key === "a" || key === "b")) return sayResolve();
