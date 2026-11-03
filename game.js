@@ -399,6 +399,44 @@ function journalScreen() {
     </div>`);
   on("#back", () => areaScreen());
 }
+function mapScreen() {
+  const W = S.world || {}, here = W.map;
+  const AREA = { bungalow: "stonehouse", garden: "stonehouse", coffeeshop: "stonehouse", jkhouse: "stonehouse", chloehouse: "stonehouse",
+    ebleycafe: "ebley", roughhands: "stroud", fghouse: "stroud", gym: "stroud", office: "stroud" };
+  const area = AREA[here] || here;
+  const done = q => q.flags.every(f => S.flags[f]);
+  const cur = QUESTS.main.find(q => !done(q));
+  const GOAL = { letter: "stonehouse", beat_jk: "stonehouse", beat_chloe: "stonehouse", stroud: "stroud", beat_fg: "stroud", beat_tina: "stroud", finished: "stonehouse" };
+  const goal = cur && GOAL[cur.flags[0]];
+  const vis = S.visited || {};
+  const nodes = [
+    { id: "framilode", name: "Framilode", x: 12, y: 22, sub: "River Severn" },
+    { id: "stonehouse", name: "Stonehouse", x: 30, y: 52, sub: "Adelaide Gardens · J&K · Chloe · station" },
+    { id: "ebley", name: "Ebley", x: 54, y: 46, sub: "The Mill · Lukewarm Kettle" },
+    { id: "selsley", name: "Selsley Common", x: 60, y: 76, sub: "Hilltop" },
+    { id: "stroud", name: "Stroud", x: 82, y: 40, sub: "Five Valleys · Rough Hands · High St" },
+  ];
+  const known = id => vis[id] || id === area || id === "stonehouse";
+  const pin = n => `<div class="mnode ${n.id === area ? "here" : ""} ${known(n.id) ? "" : "unk"}" style="left:${n.x}%;top:${n.y}%">
+      <i>${n.id === area ? "📍" : n.id === goal ? "⭐" : known(n.id) ? "●" : "?"}</i><b>${known(n.id) ? n.name : "???"}</b>${known(n.id) ? `<small>${n.sub}</small>` : ""}</div>`;
+  screen(`
+    <div class="page">
+      <h2>🗺️ Map of the Five Valleys</h2>
+      <div class="mapbox">
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M0 10 C 15 20, 10 35, 0 45" stroke="#3b82f6" stroke-width="5" fill="none"/>
+          <path d="M8 30 C 20 40, 40 50, 100 44" stroke="#60a5fa" stroke-width="1.6" fill="none" stroke-dasharray="0"/>
+          <path d="M14 26 L 30 52 L 54 46 L 82 40" stroke="#e8cf96" stroke-width="2.2" fill="none"/>
+          <path d="M54 46 L 60 76" stroke="#e8cf96" stroke-width="1.6" fill="none"/>
+          <path d="M30 56 L 82 44" stroke="#1b1530" stroke-width="1" fill="none" stroke-dasharray="3 2"/>
+        </svg>
+        ${nodes.map(pin).join("")}
+      </div>
+      <p class="tiny center">📍 You are here · ⭐ ${cur ? esc(cur.title) : "All done!"} · dashed line = railway</p>
+      <button class="btn" id="back">← Back</button>
+    </div>`);
+  on("#back", () => areaScreen());
+}
 function dexScreen() {
   const list = Object.keys(SPECIES).filter(k => COLLECTABLE.includes(k) || S.seen[k]);
   screen(`
@@ -519,7 +557,7 @@ function fightMenu() {
       const mv = MOVES[id], t = TYPES[mv.type];
       const eff = mv.power ? effectiveness(mv.type, SPECIES[foe().sp].type) : 1;
       return `<button class="btn move" data-m="${id}" style="--tc:${t.color}">
-        <b>${mv.name}</b><small>${t.emoji} ${mv.power ? `Pow ${mv.power}` : effectText(mv.effect)}${eff > 1 ? " · 💥 strong!" : eff < 1 ? " · weak" : ""}</small></button>`;
+        <b>${mv.name}</b><small>${t.emoji} ${t.name} · ${mv.power ? `Pow ${mv.power}` : effectText(mv.effect)} · ${mv.acc}% hit${eff > 1 ? " · 💥 strong!" : eff < 1 ? " · weak" : ""}</small></button>`;
     }).join("")}
     <button class="btn ghost wide" data-back="1">← Back</button>`);
   on("[data-m]", el => { if (!B.busy) turn({ kind: "move", id: el.dataset.m }); });
@@ -693,6 +731,7 @@ async function useMove(who, id) {
     const sp = document.getElementById(who === "p" ? "foeSprite" : "meSprite");
     if (sp) sp.classList.add("faint");
     await say(`${who === "p" ? prefix || (B.wild ? "Wild " : "Foe ") : ""}${monName(defM)} fainted!`);
+    if (who !== "p" && !S.flags.healtip) S.flags.healtipDue = true;
     if (who === "p") await foeFainted(); else await playerFainted();
     return true;
   }
@@ -742,17 +781,17 @@ async function tryCatch() {
 
 async function awardXp(total) {
   const ids = [...B.participants];
+  let first = true;
   for (const m of S.team) {
-    if (m.hp <= 0) continue;
-    const share = ids.includes(m.uid) ? total : Math.floor(total / 2);
+    const share = total;            // the whole party learns from every battle
     if (!share) continue;
     m.xp += share;
-    if (m === me()) await say(`${monName(m)} gained ${share} XP!`, 900);
+    if (first) { await say(`Your whole team gained ${share} XP!`, 900); first = false; }
     while (m.xp >= xpNeed(m.level) && m.level < 50) {
       m.xp -= xpNeed(m.level);
       const before = stats(m).hp;
       m.level++;
-      m.hp += stats(m).hp - before;
+      if (m.hp > 0) m.hp += stats(m).hp - before;
       sfx.level();
       if (B && m === me()) renderBattleKeepMsg();
       await say(`${monName(m)} grew to level ${m.level}!`);
@@ -805,7 +844,11 @@ async function endBattle(result) {
   if (result === "win" && trainer) {
     S.flags[trainer.flag] = true;
     S.balls += trainer.reward || 0;
-    if (trainer.boss) { S.finished = true; save(); return endingScreen(); }
+    if (trainer.boss) {
+      S.finished = true; S.flags.finished = true; save();
+      const tp = `<img class="pix portrait dead" src="${WORLD.look("tina").toDataURL()}" alt="">`;
+      return talk(CONFIG.tinaDies, tp, () => WORLD.party());
+    }
   }
   save();
   WORLD.afterBattle(result, trainer);
@@ -829,7 +872,9 @@ function evolve(m, into) {
       document.getElementById("evomsg").textContent = `${from} evolved into ${SPECIES[into].name}!`;
       S.seen[into] = S.caught[into] = true;
       save();
-      setTimeout(res, 2200 * SPEED);
+      const ok = document.createElement("button"); ok.className = "btn big"; ok.id = "evook"; ok.textContent = "A ▶ Continue";
+      document.querySelector(".evolve").appendChild(ok); ok.onclick = () => res();
+      if (typeof navSet === "function") navSet(ok);
     }, 2600 * SPEED);
   });
 }
@@ -954,7 +999,7 @@ document.addEventListener("keydown", e => {
 // ---------- helpers for world.js ----------
 window.PS = {
   S: () => S, save, music, sfx, beep, toggleMute, isMuted: () => muted, screen, esc, fill, heroName,
-  healAll, makeMon, startBattle, teamScreen, dexScreen, journalScreen, giveStarters, pixURL,
+  healAll, makeMon, startBattle, teamScreen, dexScreen, journalScreen, mapScreen, endingScreen, evolve, talk, giveStarters, pixURL,
   alive: () => alive(S.team),
 };
 

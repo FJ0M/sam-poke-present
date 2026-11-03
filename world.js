@@ -12,9 +12,10 @@ const S = () => window.PS.S();
 
 // ---------- tile painting ----------
 // Each tile is painted once onto a 16x16 canvas and cached.
-const SOLID = new Set("THRwSVM~#fWvkKtbpqdFCon|YajiZEQGUhlmNIJA".split(""));
+const SOLID = new Set("THRwSVM~#fWvkKtbpqdFCon|YajiZEQGUhlmNIJA1234567".split(""));
 const ENC = { ",": "grass", "e": "grass", "r": "reeds" };
 const TILE_CACHE = {};
+const pick = a => a[Math.floor(Math.random() * a.length)];
 function cv(w = TS, h = TS) { const c = document.createElement("canvas"); c.width = w; c.height = h; return c; }
 function px(x, c, X, Y, w = 1, h = 1) { x.fillStyle = c; x.fillRect(X, Y, w, h); }
 function seeded(n) { let s = n * 9301 + 49297; return () => ((s = (s * 9301 + 49297) % 233280) / 233280); }
@@ -44,7 +45,21 @@ const PAINT = {
   "w": x => { PAINT.H(x); px(x, "#4a5568", 3, 3, 10, 9); px(x, "#93c5fd", 4, 4, 8, 7); px(x, "#4a5568", 7, 4, 1, 7); px(x, "#4a5568", 4, 7, 8, 1); px(x, "#dbeafe", 5, 5, 2, 1); },
   "D": x => { PAINT.H(x); px(x, "#5b3a1e", 3, 2, 10, 14); px(x, "#7c4f28", 4, 3, 8, 13); px(x, "#facc15", 10, 9, 1, 1); },
   "S": x => { grass(x); px(x, "#6b4423", 7, 9, 2, 6); px(x, "#8b5a2b", 2, 2, 12, 8); px(x, "#a87842", 3, 3, 10, 6); for (const y of [4, 6]) px(x, "#5b3a1e", 4, y, 8, 1); },
-  "V": x => { PAINT["="](x); px(x, "#1b1530", 1, 3, 15, 11); px(x, "#f1f5f9", 2, 4, 13, 8); px(x, "#93c5fd", 10, 5, 4, 3); px(x, "#ef4444", 2, 9, 13, 1); px(x, "#1b1530", 3, 12, 3, 3); px(x, "#1b1530", 11, 12, 3, 3); },
+  "V": x => { PAINT["="](x); px(x, "#00000033", 1, 13, 15, 2); px(x, "#cbd5e1", 1, 2, 14, 1); px(x, "#f8fafc", 1, 3, 15, 9); px(x, "#e2e8f0", 1, 10, 15, 2);
+    px(x, "#334155", 2, 1, 10, 1); px(x, "#f97316", 3, 0, 4, 1); px(x, "#16a34a", 8, 0, 3, 1);
+    px(x, "#1e3a5f", 11, 4, 4, 3); px(x, "#7dd3fc", 12, 4, 2, 1); px(x, "#1e3a5f", 2, 4, 3, 3); px(x, "#94a3b8", 6, 3, 1, 8); px(x, "#64748b", 9, 6, 1, 1);
+    px(x, "#f59e0b", 15, 8, 1, 1); px(x, "#0f172a", 2, 11, 4, 3); px(x, "#0f172a", 11, 11, 4, 3); px(x, "#9ca3af", 3, 12, 2, 1); px(x, "#9ca3af", 12, 12, 2, 1); },
+  // Adelaide Gardens tourist board
+  "1": x => { grass(x); px(x, "#9ca3af", 2, 1, 1, 15); px(x, "#012169", 3, 1, 11, 7); px(x, "#fff", 3, 4, 5, 1); px(x, "#fff", 5, 1, 1, 4); px(x, "#c8102e", 3, 4, 5, 1); px(x, "#c8102e", 5, 1, 1, 3);
+    for (const [X, Y] of [[5, 6], [10, 2], [12, 4], [10, 6], [11, 5]]) px(x, "#fff", X, Y); px(x, "#6b7280", 1, 14, 3, 2); },
+  "2": x => { PAINT["="](x); px(x, "#00000033", 0, 13, 16, 2); px(x, "#b45309", 0, 6, 16, 6); px(x, "#92400e", 0, 11, 16, 1); px(x, "#b45309", 8, 3, 7, 4); px(x, "#7dd3fc", 9, 4, 5, 2);
+    px(x, "#78350f", 1, 4, 6, 2); px(x, "#facc15", 2, 3, 2, 1); px(x, "#e5e7eb", 15, 8, 1, 2); px(x, "#111827", 2, 11, 3, 3); px(x, "#111827", 11, 11, 3, 3); px(x, "#9ca3af", 3, 12, 1, 1); px(x, "#9ca3af", 12, 12, 1, 1); },
+  "3": x => { grass(x); px(x, "#16a34a", 3, 4, 10, 10); px(x, "#15803d", 3, 4, 10, 1); px(x, "#14532d", 2, 3, 12, 1); px(x, "#111827", 4, 14, 2, 2); px(x, "#111827", 10, 14, 2, 2);
+    for (const X of [5, 7, 9]) px(x, "#fef3c7", X, 0, 1, 3); px(x, "#fef3c7", 5, 0, 5, 1); px(x, "#fff", 6, 8, 4, 2); },
+  "4": x => { grass(x); px(x, "#6b7280", 7, 10, 2, 6); px(x, "#111827", 1, 1, 14, 10); px(x, "#facc15", 2, 2, 12, 8);
+    px(x, "#111827", 5, 4, 5, 3); px(x, "#111827", 9, 3, 2, 2); px(x, "#111827", 4, 7, 1, 2); px(x, "#111827", 8, 7, 2, 1); px(x, "#111827", 3, 5, 2, 1); },
+  "5": x => { grass(x); px(x, "#00000033", 2, 13, 13, 2); px(x, "#92400e", 2, 9, 13, 4); px(x, "#b45309", 2, 9, 13, 1);
+    for (const X of [4, 8, 12]) px(x, "#facc15", X, 10, 2, 2); px(x, "#dc2626", 6, 10, 1, 2); px(x, "#dc2626", 10, 10, 1, 2); px(x, "#78350f", 14, 8, 2, 6); },
   "M": x => { px(x, "#b9b4ad", 0, 0, 16, 16); px(x, "#ef4444", 0, 1, 16, 4); for (let X = 0; X < 16; X += 4) px(x, "#fff", X, 1, 2, 4); px(x, "#8b5a2b", 1, 6, 14, 8); px(x, "#facc15", 3, 7, 3, 2); px(x, "#22c55e", 8, 7, 3, 2); px(x, "#f97316", 11, 8, 2, 2); },
   "n": x => { grass(x); px(x, "#8b5a2b", 1, 6, 14, 3); px(x, "#6b4423", 1, 9, 14, 1); px(x, "#6b4423", 2, 10, 2, 4); px(x, "#6b4423", 12, 10, 2, 4); },
   // indoors
@@ -64,6 +79,9 @@ const PAINT = {
   "q": x => { PAINT.W(x); px(x, "#4b5563", 0, 6, 16, 2); for (const X of [1, 6, 11]) { px(x, "#1f2937", X, 8, 4, 5); px(x, "#6b7280", X + 1, 7, 2, 1); } },
   "d": x => { PAINT["_"](x); px(x, "#78350f", 0, 3, 16, 10); px(x, "#92400e", 1, 4, 14, 8); px(x, "#f1f5f9", 3, 5, 5, 4); px(x, "#facc15", 10, 5, 3, 3); },
   "F": x => { PAINT.W(x); px(x, "#6b7280", 2, 1, 12, 14); for (const y of [3, 8]) { px(x, "#9ca3af", 3, y, 10, 4); px(x, "#1f2937", 7, y + 1, 2, 1); } },
+  // Rough Hands: dark green, wood and black
+  "6": x => { px(x, "#14532d", 0, 0, 16, 16); px(x, "#166534", 0, 0, 16, 2); for (const X of [3, 8, 13]) px(x, "#0f3d22", X, 2, 1, 10); px(x, "#7c4a22", 0, 12, 16, 4); px(x, "#9a5d2c", 0, 12, 16, 1); px(x, "#111827", 0, 15, 16, 1); },
+  "7": x => { PAINT["6"](x); px(x, "#111827", 0, 6, 16, 9); px(x, "#a0672f", 0, 5, 16, 2); px(x, "#c08040", 0, 5, 16, 1); px(x, "#d1d5db", 3, 0, 7, 5); px(x, "#111827", 4, 1, 5, 2); px(x, "#f8fafc", 11, 2, 3, 3); px(x, "#7c4a22", 12, 3, 1, 1); },
   "C": x => { PAINT.W(x); px(x, "#78350f", 0, 6, 16, 9); px(x, "#a16207", 0, 6, 16, 2); px(x, "#9ca3af", 3, 1, 6, 5); px(x, "#1b1530", 4, 2, 4, 2); px(x, "#fff", 11, 3, 3, 3); },
   // railway, stations, stone buildings, bridges
   "|": x => { px(x, "#8a8178", 0, 0, 16, 16); const r = seeded(11); for (let i = 0; i < 8; i++) px(x, "#6f665e", Math.floor(r() * 15), Math.floor(r() * 15), 1, 1);
@@ -168,11 +186,14 @@ const LOOKS = {
   sam:      { hair: "#4a2e16", skin: "#f1c27d", hat: "#c2410c", hat2: "#9a3412", glasses: true, tache: true,
               shirt: "#f8fafc", jacket: "#4d7c0f", jacket2: "#365314", legs: "#a8a29e", legs2: "#78716c", shoes: "#f1f5f9" },
   prof:     { hair: "#e5e7eb", skin: "#f1c27d", shirt: "#f8fafc", jacket: "#7c5a2b", jacket2: "#5b3a1e", legs: "#365314", glasses: true, tache: true, tacheCol: "#d1d5db" },
-  freddie:  { hair: "#a16207", skin: "#f1c27d", shirt: "#2563eb", shirt2: "#1d4ed8", legs: "#374151", shoes: "#f1f5f9" },
+  freddie:  { hair: "#3b2414", skin: "#f1c27d", shirt: "#2563eb", shirt2: "#1d4ed8", legs: "#374151", shoes: "#f1f5f9", beard: true },
   georgina: { hair: "#3f2a14", skin: "#f1c27d", shirt: "#f59e0b", shirt2: "#d97706", legs: "#1f2937", long: true },
   chloe:    { hair: "#7c2d12", skin: "#f1c27d", shirt: "#ec4899", shirt2: "#be185d", legs: "#1f2937", long: true },
-  jaz:      { hair: "#1f2937", skin: "#d6a06b", shirt: "#16a34a", shirt2: "#15803d", legs: "#111827", long: true },
-  kim:      { hair: "#78350f", skin: "#f1c27d", shirt: "#0ea5e9", shirt2: "#0369a1", legs: "#1f2937", shoes: "#f1f5f9" },
+  jaz:      { hair: "#0b0b10", skin: "#e8c4a0", shirt: "#1f1b24", jacket: "#111018", jacket2: "#000000", legs: "#111018", shoes: "#3b0764", long: true, fringe: true, aura: "#a855f7" },
+  kim:      { hair: "#78350f", skin: "#f1c27d", shirt: "#f8fafc", jacket: "#1e2a4a", jacket2: "#111a33", legs: "#111a33", shoes: "#0b0b10", police: true },
+  egg:      { egghead: true, hair: "#8a6a4a", skin: "#f3e3c3", shirt: "#facc15", shirt2: "#ca8a04", legs: "#1f2937", shoes: "#f1f5f9" },
+  brendan:  { hair: "#7c2d12", skin: "#f1c27d", shirt: "#065f46", shirt2: "#064e3b", legs: "#1f2937", beard: true },
+  davide:   { hair: "#1f2937", skin: "#d6a06b", shirt: "#7c3aed", shirt2: "#5b21b6", legs: "#374151", glasses: true },
   surfer:   { hair: "#fde047", skin: "#e0ac69", shirt: "#0f172a", jacket: "#0f172a", jacket2: "#1e293b", legs: "#0f172a", shoes: "#0f172a", long: true },
   coach:    { hair: "#1b1530", skin: "#c68642", shirt: "#111827", shirt2: "#000000", legs: "#374151", hat: "#dc2626", hat2: "#991b1b", shoes: "#f1f5f9" },
   tina:     { hair: "#facc15", skin: "#f1c27d", shirt: "#f8fafc", jacket: "#4b5563", jacket2: "#374151", legs: "#374151", long: true, glasses: true },
@@ -185,8 +206,9 @@ const LOOKS = {
 };
 const ANIMAL_LOOKS = { frenchie: "ralph", frenchie2: "bonnie", winnie: "winnie", cow: "moochinhampton", sheep: "cotswool",
   milo: "milo", chap: "chap", lila: "lila", gerty: "gerty", oswald: "oswald", bunny: "jkrabbit", roo: "boxroo",
-  catluce: "luce", catspook: "spook", catmarie: "marie" };
+  catluce: "luce", catspook: "spook", catmarie: "marie", koala: "koala" };
 const SPR_CACHE = {};
+const LOGO = new Image(); LOGO.src = "rh-logo.png";
 function outline(c) {
   const x = c.getContext("2d"), d = x.getImageData(0, 0, c.width, c.height), a = d.data, W = c.width, H = c.height;
   const solid = i => a[i * 4 + 3] > 100, out = [];
@@ -244,11 +266,21 @@ function personSprite(look, dir, step, bike) {
   // head
   px(x, L.skin, 4, Y(2), 8, 6); px(x, skin2, 4, Y(7), 8, 1);
   if (d !== "left") { px(x, L.skin, 3, Y(4), 1, 2); px(x, L.skin, 12, Y(4), 1, 2); }
+  // egg-shaped head with stubble (Coach Egg)
+  if (L.egghead) {
+    const sk2 = shade(L.skin, 0.9), stub = "#8a6a4a";
+    px(x, L.skin, 6, Y(-1), 4, 1); px(x, L.skin, 5, Y(0), 6, 1); px(x, L.skin, 4, Y(1), 8, 1);
+    px(x, shade(L.skin, 1.12), 6, Y(0), 2, 1); px(x, shade(L.skin, 1.12), 5, Y(1), 1, 1); px(x, sk2, 4, Y(7), 8, 1); px(x, L.skin, 5, Y(8), 6, 1);
+    for (const [X, Yy] of [[6, 0], [8, 0], [10, 1], [5, 1], [7, 1], [9, 1], [4, 2], [11, 2], [6, 2], [8, 2], [10, 2], [3, 3], [12, 3]]) px(x, stub, X, Y(Yy));
+    if (d !== "up") for (const [X, Yy] of [[4, 6], [11, 6], [5, 7], [7, 7], [9, 7], [10, 7], [6, 8], [8, 8], [4, 7], [11, 7]]) px(x, stub, d === "left" ? X - 1 : X, Y(Yy));
+    else for (const [X, Yy] of [[5, 4], [7, 3], [9, 4], [10, 5], [6, 5], [8, 6]]) px(x, stub, X, Y(Yy));
+  } else {
   // hair
   px(x, L.hair, 4, Y(1), 8, 2); px(x, L.hair, 3, Y(2), 1, 2); px(x, L.hair, 12, Y(2), 1, 2); px(x, shade(L.hair, 1.3), 6, Y(1), 3, 1);
   if (L.long) { px(x, L.hair, 3, Y(3), 1, 6); px(x, L.hair, 12, Y(3), 1, 6); px(x, hair2, 3, Y(8), 1, 1); px(x, hair2, 12, Y(8), 1, 1); }
   if (d === "up") { px(x, L.hair, 4, Y(2), 8, 5); px(x, hair2, 4, Y(6), 8, 1); }
   else if (d === "left") { px(x, L.hair, 8, Y(2), 4, 4); px(x, hair2, 10, Y(5), 2, 1); px(x, L.skin, 3, Y(5), 1, 1); px(x, skin2, 8, Y(4), 1, 2); }
+  }
   // hat (beanie): sits over the hair, with a turned-up cuff
   if (L.hat) {
     px(x, L.hat, 5, Y(0), 6, 1); px(x, L.hat, 4, Y(1), 8, 2); px(x, L.hat2, 3, Y(3), 10, 1);
@@ -267,9 +299,38 @@ function personSprite(look, dir, step, bike) {
     else { px(x, "#1b1530", 5, Y(4), 1, 2); }
     if (L.tache) px(x, L.tacheCol || hair2, 3, Y(6), 3, 1); else px(x, "#e07a6b", 4, Y(6), 1, 1);
   }
+  if (L.beard && d !== "up") {
+    const b = L.hair, b2 = hair2;
+    if (d === "down") { px(x, b, 4, Y(6), 8, 2); px(x, b, 5, Y(8), 6, 1); px(x, b2, 5, Y(6), 6, 1); px(x, "#e07a6b", 7, Y(6), 2, 1); px(x, b, 3, Y(5), 1, 2); px(x, b, 12, Y(5), 1, 2); }
+    else { px(x, b, 3, Y(6), 6, 2); px(x, b, 4, Y(8), 4, 1); px(x, b, 8, Y(4), 1, 3); }
+  }
+  if (L.fringe && d !== "up") { // emo fringe swept over one eye
+    if (d === "down") { px(x, L.hair, 4, Y(2), 6, 2); px(x, L.hair, 7, Y(4), 4, 1); px(x, L.hair, 9, Y(5), 2, 1); px(x, "#a855f7", 5, Y(2), 1, 1); }
+    else { px(x, L.hair, 3, Y(2), 5, 2); px(x, L.hair, 3, Y(4), 3, 1); }
+  }
+  if (L.police) { // custodian-style helmet with silver badge
+    px(x, "#111a33", 5, Y(-1), 6, 1); px(x, "#111a33", 4, Y(0), 8, 3); px(x, "#1e2a4a", 6, Y(0), 3, 1); px(x, "#cbd5e1", 7, Y(1), 2, 2);
+    px(x, "#0b0b10", 3, Y(3), 10, 1);
+    if (d !== "up") { px(x, "#cbd5e1", 5, Y(9), 1, 1); px(x, "#facc15", 9, Y(10), 2, 2); }
+  }
   outline(c);
   if (flip) { const f = cv(), fx = f.getContext("2d"); fx.translate(16, 0); fx.scale(-1, 1); fx.drawImage(c, 0, 0); return SPR_CACHE[k] = f; }
   return SPR_CACHE[k] = c;
+}
+// Tina, lying across two tiles as the party table, with cake and cups on top
+function propSprite(look) {
+  if (SPR_CACHE[look]) return SPR_CACHE[look];
+  const c = cv(), x = c.getContext("2d"), L = LOOKS.tina;
+  if (look === "tinadeadL") {
+    px(x, L.hair, 0, 7, 4, 7); px(x, L.skin, 2, 8, 5, 5); px(x, "#1b1530", 3, 9, 1, 1); px(x, "#1b1530", 5, 9, 1, 1); px(x, "#1b1530", 4, 10, 1, 1); px(x, "#1b1530", 3, 11, 1, 1); px(x, "#1b1530", 5, 11, 1, 1);
+    px(x, L.jacket, 7, 7, 9, 7); px(x, L.shirt, 7, 9, 9, 2);
+    px(x, "#fde68a", 8, 3, 7, 4); px(x, "#f472b6", 8, 2, 7, 2); px(x, "#ef4444", 11, 0, 1, 2); px(x, "#facc15", 11, 0, 1, 1);
+  } else {
+    px(x, L.legs, 0, 8, 10, 5); px(x, "#1b1530", 10, 8, 3, 2); px(x, "#1b1530", 10, 11, 3, 2);
+    px(x, "#f8fafc", 2, 4, 4, 4); px(x, "#92400e", 3, 4, 2, 1); px(x, "#f8fafc", 7, 4, 4, 4); px(x, "#d97706", 8, 4, 2, 1); px(x, "#e5e7eb", 3, 1, 1, 2); px(x, "#e5e7eb", 8, 1, 1, 2);
+  }
+  outline(c);
+  return SPR_CACHE[look] = c;
 }
 const IMG_CACHE = {};
 function animalSprite(look, step) {
@@ -281,7 +342,7 @@ function animalSprite(look, step) {
   img.src = P().pixURL(ANIMAL_LOOKS[look]);
   return IMG_CACHE[k] = c;
 }
-function charSprite(look, dir, step, bike) { return ANIMAL_LOOKS[look] ? animalSprite(look, step) : personSprite(look, dir, step, bike); }
+function charSprite(look, dir, step, bike) { return look.startsWith("tinadead") ? propSprite(look) : ANIMAL_LOOKS[look] ? animalSprite(look, step) : personSprite(look, dir, step, bike); }
 
 // ---------- state ----------
 let active = false, canvas = null, ctx = null, raf = 0;
@@ -314,8 +375,9 @@ function loadMap(id, x, y, dir) {
   st.world = { map: id, x, y, dir: dir || (pl && pl.dir) || "down" };
   st.visited = st.visited || {};
   if (PLACES[id]) st.visited[id] = true;
+  if (id === "stroud") { st.flags = st.flags || {}; st.flags.stroud = true; }
   pl = { x, y, dir: st.world.dir, fx: x, fy: y, moving: false, step: 0 };
-  npcs = (map.npcs || []).map(n => ({ ...n, ox: n.x, oy: n.y, fx: n.x, fy: n.y, step: 0, visible: !(n.until && flag(n.until)), homeDir: n.dir, wanderT: Math.random() * 3000 }));
+  npcs = (map.npcs || []).map(n => ({ ...n, ox: n.x, oy: n.y, fx: n.x, fy: n.y, step: 0, visible: !(n.until && flag(n.until)) && !(n.after && !flag(n.after)), homeDir: n.dir, wanderT: Math.random() * 3000 }));
   if (map.indoor && st.bike) st.bike = false;
   P().music(map.music === "home" ? "home" : map.music || "explore");
   P().save();
@@ -521,6 +583,10 @@ async function interact() {
   }
   if (map.van === key) return vanMenu();
   const th = map.things && map.things[key];
+  if (th && th.cake) {
+    if (!flag("letter")) return showText(["The birthday cake! You'd better blow out the candles... wait, what was that noise in the hallway?"]);
+    return showText(flag("finished") ? ["The cake. What's left of it. Delicious. Happy birthday, Mr Chicken!"] : CONFIG.cakeLocked);
+  }
   if (th) {
     const lines = Array.isArray(th) ? th : th.text;
     await showText(lines);
@@ -533,10 +599,46 @@ async function interact() {
 async function vanMenu() {
   const st = S();
   const items = Object.keys(PLACES).filter(k => st.visited && st.visited[k] && k !== mapId).map(k => ({ label: PLACES[k].label, value: k }));
-  if (!items.length) return showText(["Sam's van. It's covered in mud and has a cat hair problem.", "Explore further and the van can take you back to places you've been."]);
+  if (!items.length) return showText(["Sam's van. Spotless inside. Not one cat hair. Somehow.", "It's packed with camping gear: a tent, a stove, two folding chairs and a bag of 400 tent pegs.", "Explore further and the van can take you back to places you've been."]);
   items.push({ label: "Stay here", value: null });
-  const v = await showMenu("🚐 Hop in the van. Where to?", items);
-  if (v) await travel(v, "Sam parks the van badly. Classic.");
+  const v = await showMenu("🚐 Spotless van, rammed with camping gear. Where to?", items);
+  if (v) await travel(v, pick(["Sam parks the van perfectly. Not a cat hair in sight.", "The camping stove rattles the whole way. Worth it.", "Sam arrives. The folding chairs did not survive the hill."]));
+}
+
+async function winnieJoins() {
+  const st = S();
+  await showText(CONFIG.winnieJoins, { keepBusy: true });
+  const lvl = Math.max(5, ...st.team.map(m => m.level));
+  const w = P().makeMon("winnie", lvl);
+  st.flags.winnie = true; st.seen.winnie = st.caught.winnie = true;
+  if (st.team.length < 6) st.team.push(w); else st.box.push(w);
+  P().sfx.catch();
+  for (const m of npcs) if (m.look === "winnie") m.visible = false;
+  await showText([`Winnie joined your team at level ${lvl}!`, "Winnie is so excited she's... she's..."], { keepBusy: true });
+  unmount();
+  await P().evolve(w, "winnieeee");
+  P().save();
+  WORLD.resume();
+}
+
+// The ending: everyone round at the bungalow, cake and tea, Tina as the coffee table.
+async function party() {
+  loadMap("bungalow", 8, 6, "down");
+  const add = (id, x, y, look, dir) => npcs.push({ id, x, y, ox: x, oy: y, fx: x, fy: y, look, dir, step: 0, visible: true, text: [] });
+  npcs = npcs.filter(n => !["c1", "c2", "c3"].includes(n.id));
+  add("tina1", 8, 8, "tinadeadL", "down"); add("tina2", 9, 8, "tinadeadR", "down");
+  add("chloe", 7, 7, "chloe", "right"); add("winnie", 7, 6, "winnie", "down");
+  add("jaz", 10, 7, "jaz", "left"); add("kim", 10, 8, "kim", "left");
+  add("freddie", 7, 9, "freddie", "up"); add("georgina", 8, 9, "georgina", "up");
+  add("ralph", 6, 10, "frenchie", "up"); add("bonnie", 10, 10, "frenchie2", "up");
+  add("c1", 6, 8, "catluce", "right"); add("c2", 9, 9, "catspook", "left"); add("c3", 10, 9, "catmarie", "left");
+  npcs.find(n => n.id === "c2").playfight = npcs.find(n => n.id === "c3").playfight = true;
+  mount();
+  P().music("birthday");
+  await showText(CONFIG.party, { keepBusy: true });
+  busy = false;
+  unmount();
+  P().endingScreen();
 }
 
 async function startMenu() {
@@ -545,6 +647,7 @@ async function startMenu() {
     { label: "Team", value: "team" },
     { label: CONFIG.dexName, value: "dex" },
     { label: "Journal", value: "journal" },
+    { label: "Map", value: "map" },
     ...(!map.indoor ? [{ label: st.bike ? "Get off the e-bike" : "Ride the e-bike", value: "bike" }] : []),
     { label: "Save", value: "save" },
     { label: P().isMuted() ? "Sound: off" : "Sound: on", value: "sound" },
@@ -554,6 +657,7 @@ async function startMenu() {
   if (v === "team") { unmount(); P().teamScreen(); }
   else if (v === "dex") { unmount(); P().dexScreen(); }
   else if (v === "journal") { unmount(); P().journalScreen(); }
+  else if (v === "map") { unmount(); P().mapScreen(); }
   else if (v === "bike") { st.bike = !st.bike; P().save(); P().beep(st.bike ? 880 : 440, .08); if (st.bike) P().music("bike"); else P().music(map.music); }
   else if (v === "save") { P().save(); await showText(["Game saved! (It also saves by itself as you go.)"]); }
   else if (v === "sound") P().toggleMute();
@@ -629,8 +733,12 @@ function draw() {
       : tileImg(t, (t === "~" || t === "B") ? ((frame + x + y) & 3) : (t === "r" || t === "," || t === "e") ? ((frame >> 1) + x) & 1 : 0, v);
     ctx.drawImage(img, x * TS - camX + offX, y * TS - camY + offY);
   }
+  // painted shop signs
+  for (const sg of map.signs || []) { if (!LOGO.complete || !LOGO.naturalWidth) break;
+    ctx.drawImage(LOGO, Math.round(sg.x * TS - camX + offX), Math.round(sg.y * TS - camY + offY), Math.round(sg.w * TS), Math.round(sg.w * TS * LOGO.naturalHeight / LOGO.naturalWidth)); }
   // characters, sorted by y
-  const list = npcs.filter(n => n.visible).map((n, i) => ({ img: charSprite(n.look, n.dir, n.moving ? n.step : (ANIMAL_LOOKS[n.look] ? (tick + i) & 1 : 0)), x: n.fx, y: n.fy, alert: n.alert,
+  const list = npcs.filter(n => n.visible).map((n, i) => ({ img: charSprite(n.look, n.dir, n.moving ? n.step : (ANIMAL_LOOKS[n.look] ? (tick + i) & 1 : 0)), x: n.fx + (n.playfight ? ((frame & 1) ? 0.08 : -0.08) * (i % 2 ? 1 : -1) : 0), y: n.fy - (n.playfight && (frame & 2) ? 0.1 : 0), alert: n.alert,
+    aura: (LOOKS[n.look] || {}).aura,
     bob: !n.moving && !ANIMAL_LOOKS[n.look] && ((tick + i) % 3 === 0) ? 1 : 0 }));
   const st = S();
   const bike = st.bike && !map.indoor;
@@ -639,6 +747,7 @@ function draw() {
   for (const c of list) {
     const X = Math.round(c.x * TS - camX + offX), Y = Math.round(c.y * TS - camY + offY) - 3;
     ctx.fillStyle = "rgba(27,21,48,.25)"; ctx.fillRect(X + 3, Y + 16, 10, 2);
+    if (c.aura) { ctx.fillStyle = c.aura; for (let i = 0; i < 5; i++) { const a = (frame * 0.8 + i * 1.26), r = 9; ctx.globalAlpha = 0.7; ctx.fillRect(Math.round(X + 7 + Math.cos(a) * r), Math.round(Y + 8 + Math.sin(a) * r * 0.8), 2, 2); } ctx.globalAlpha = 1; }
     if (c.bob) { ctx.drawImage(c.img, 0, 0, 16, 9, X, Y + 1, 16, 9); ctx.drawImage(c.img, 0, 9, 16, 7, X, Y + 9, 16, 7); } // a little breath
     else ctx.drawImage(c.img, X, Y);
     if (c.alert) { ctx.fillStyle = "#fff"; ctx.fillRect(X + 5, Y - 12, 6, 10); ctx.fillStyle = "#ef4444"; ctx.fillRect(X + 7, Y - 11, 2, 5); ctx.fillRect(X + 7, Y - 5, 2, 2); }
@@ -678,7 +787,9 @@ const WORLD = {
     if (result === "lose") {
       loadMap("bungalow", START.x, START.y, "down");
       mount();
-      return showText([`${P().heroName()} legged it home to the sofa and had a lie down.`, "Your team is fully rested."]);
+      await showText([`${P().heroName()} legged it home to the sofa and had a lie down.`, "Your team is fully rested."]);
+      if (!st.flags.healtip) { st.flags.healtip = true; delete st.flags.healtipDue; P().save(); await showText(CONFIG.healTip); }
+      return;
     }
     WORLD.resume();
     if (result === "win" && trainer) {
@@ -687,7 +798,10 @@ const WORLD = {
       if (trainer.reward) await showText([`You got ${trainer.reward} ${CONFIG.ballName}s!`]);
       // NPCs that were waiting on this flag step aside
       for (const m of npcs) if (m.until === trainer.flag) m.visible = false;
+      for (const m of npcs) if (m.after === trainer.flag) m.visible = true;
+      if (trainer.flag === "beat_chloe" && !flag("winnie")) await winnieJoins();
     }
+    if (st.flags.healtipDue && !st.flags.healtip) { st.flags.healtip = true; delete st.flags.healtipDue; P().save(); await showText(CONFIG.healTip); }
   },
   battleBg() {
     if (!map) return ["#bbf7d0", "#86efac"];
@@ -699,6 +813,7 @@ const WORLD = {
     return ["#bae6fd", "#bbf7d0"];
   },
   look: (l, d = "down") => personSprite(l, d, 0, false),
+  party,
   npcSpots: () => npcs.filter(n => n.visible !== false).map(n => n.x + "," + n.y),
 };
 window.WORLD = WORLD;
