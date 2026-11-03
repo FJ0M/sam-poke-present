@@ -341,3 +341,36 @@ small { display: block; opacity: .75; font-size: .8rem; }
 @keyframes tInP { from { transform: translateX(-180px); } to { transform: none; } }
 @keyframes tOutF { to { transform: translateX(200px); opacity: 0; } }
 @keyframes tOutP { to { transform: translateX(-200px); opacity: 0; } }
+
+/* minigames */
+.mini-wrap { display: flex; flex-direction: column; gap: 8px; padding: 12px; min-height: 100%; background: #1b1530; color: #fff8e7; }
+.mini-title { text-align: center; font-size: .9rem; margin: 0; color: #facc15; }
+#mg { width: 100%; aspect-ratio: 160 / 144; image-rendering: pixelated; border: 3px solid #fff8e7; background: #000; touch-action: none; }
+.mini-hud .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-family: "Press Start 2P", monospace; font-size: .7rem; margin: 4px 0; }
+.mini-hud .row.small { font-size: .55rem; }
+.mini-hud .meter { position: relative; height: 22px; background: #374151; border: 3px solid #fff8e7; margin: 6px 0; }
+.mini-hud .meter .zone { position: absolute; top: 0; bottom: 0; background: #22c55e; }
+.mini-hud .meter .cur { position: absolute; top: -6px; bottom: -6px; width: 4px; margin-left: -2px; background: #facc15; box-shadow: 0 0 0 2px #1b1530; }
+.mini-hud .stam { flex: 1; height: 10px; background: #374151; border: 2px solid #fff8e7; }
+.mini-hud .stam div { height: 100%; background: #22c55e; }
+.mini-msg { min-height: 2.6em; margin: 0; font-size: .85rem; }
+.mini .btn.ghost { color: #fff8e7; border-color: #fff8e7; }
+
+/* catching: mug upside down over the critter */
+.ball-anim.cover { position: relative; width: 96px; height: 96px; }
+.ball-anim.cover .under { position: absolute; left: 14px; bottom: 6px; width: 68px; height: 68px; animation: hideUnder .6s steps(1) forwards; }
+.ball-anim.cover .mugimg { position: absolute; left: 0; bottom: 0; width: 96px; height: 96px; transform-origin: 50% 80%; animation: coverDrop .6s steps(6); }
+.mugimg.inv { transform: rotate(180deg); }
+@keyframes coverDrop { 0% { transform: translateY(-70px) rotate(180deg); } 70% { transform: translateY(0) rotate(180deg); } 85% { transform: translateY(-6px) rotate(180deg); } 100% { transform: rotate(180deg); } }
+@keyframes hideUnder { 0% { opacity: 1; } 70% { opacity: 0; } 100% { opacity: 0; } }
+.ball-anim.cover.wob .mugimg { animation: wobInv .5s steps(4); }
+@keyframes wobInv { 25% { transform: rotate(160deg); } 75% { transform: rotate(200deg); } 100% { transform: rotate(180deg); } }
+.ball-anim.cover.settle .mugimg { animation: settle .45s steps(4); }
+@keyframes settle { 0% { transform: rotate(180deg) translateY(0); } 40% { transform: rotate(180deg) translateY(4px) scaleY(.92); } 100% { transform: rotate(180deg); } }
+.ball-anim.cover.flip .mugimg { animation: flipUp .45s steps(6) forwards; }
+@keyframes flipUp { 0% { transform: rotate(180deg); } 50% { transform: translateY(-30px) rotate(270deg); } 100% { transform: rotate(360deg); } }
+.ball-anim.cover.tip .mugimg { animation: tipOver .38s steps(5) forwards; }
+@keyframes tipOver { 0% { transform: rotate(180deg); } 100% { transform: translate(30px, 10px) rotate(275deg); } }
+.fx.shard { position: fixed; width: 6px; height: 6px; z-index: 70; pointer-events: none; border: 1px solid #1b1530; animation: shard .8s steps(8) forwards; }
+@keyframes shard { 0% { transform: none; } 50% { transform: translate(calc(var(--dx) * .6), var(--dy)) rotate(180deg); } 100% { transform: translate(var(--dx), 40px) rotate(360deg); opacity: 0; } }
+.ball-anim.cover.wob { animation: none; }

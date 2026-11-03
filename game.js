@@ -48,6 +48,8 @@ const sfx = {
   catch: () => [784, 988, 1175].forEach((f, i) => setTimeout(() => beep(f, 0.12, "triangle", 0.07), i * 120)),
   wobble: () => beep(220, 0.1, "triangle", 0.06),
   heal: () => [440, 554, 659, 880].forEach((f, i) => setTimeout(() => beep(f, 0.12, "sine", 0.06), i * 110)),
+  miss: () => beep(140, 0.25, "square", 0.06, -60),
+  beep: (f, d) => beep(f, d, "square", 0.05),
   bawk: () => { beep(700, 0.07, "square", 0.07, 250); setTimeout(() => beep(1100, 0.07, "square", 0.07, -200), 90);
                 setTimeout(() => beep(1300, 0.28, "sawtooth", 0.06, -900), 190); },
 };
@@ -715,6 +717,13 @@ async function recall(side) {
   if (side === "f") B.hideF = true; else B.hideP = true;
   if (el) { el.className = "gone"; }
 }
+function smash(el) {
+  const r = el.getBoundingClientRect();
+  for (let i = 0; i < 9; i++) { const d = document.createElement("i"); d.className = "fx shard"; const a = -Math.PI * (0.1 + 0.8 * i / 8);
+    d.style.left = r.left + r.width / 2 + "px"; d.style.top = r.top + r.height * 0.7 + "px"; d.style.background = i % 3 ? "#166534" : "#f8fafc";
+    d.style.setProperty("--dx", Math.round(Math.cos(a) * (40 + i * 4)) + "px"); d.style.setProperty("--dy", Math.round(Math.sin(a) * 50) + "px");
+    document.body.appendChild(d); setTimeout(() => d.remove(), 800); }
+}
 function burst(el) {
   const r = el.getBoundingClientRect();
   for (let i = 0; i < 10; i++) { const d = document.createElement("i"); d.className = "fx fx-star"; const a = i / 10 * Math.PI * 2;
@@ -734,9 +743,8 @@ async function throwBall() {
   const from = document.getElementById("meSprite"), to = document.getElementById("foeSprite");
   if (!from || !to || !to.animate) return;
   const a = from.getBoundingClientRect();
-  await flyMug(a.left + a.width / 2, a.top + 10, to, 720, 650);
-  sfx.hit(); to.classList.add("suck");
-  await new Promise(r => setTimeout(r, 420));
+  await flyMug(a.left + a.width / 2, a.top + 10, to, 900, 650); // ends upside down
+  sfx.hit();
 }
 
 // returns true if the battle flow was taken over (faint handling / battle end)
@@ -812,14 +820,17 @@ async function tryCatch() {
   say(`You threw a ${CONFIG.ballName}!`, 800);
   await throwBall();
   const el = document.getElementById("foeSprite");
-  if (el) { el.classList.remove("suck"); el.innerHTML = `<div class="ball-anim drop">${mugImg()}</div>`; }
-  await new Promise(r => setTimeout(r, 450));
+  // the mug comes down upside down over the critter, like catching a spider under a glass
+  if (el) { const under = el.querySelector(".sprite .f1")?.src || pixURL(f.sp, 0);
+    el.innerHTML = `<div class="ball-anim cover"><img class="pix under" src="${under}" alt="">${mugImg("inv")}</div>`; }
+  await new Promise(r => setTimeout(r, 600));
   const chance = rate * (1.15 - 0.85 * f.hp / max);
   const ok = Math.random() < chance;
   const wobbles = ok ? 3 : rnd(0, 2);
   for (let i = 0; i < wobbles; i++) { sfx.wobble(); el?.firstChild?.classList.add("wob"); await say("...".slice(0, i + 1), 600); el?.firstChild?.classList.remove("wob"); }
   if (ok) {
-    if (el) { el.firstChild?.classList.add("flip"); await wait(450); el.innerHTML = `<div class="ball-anim peekin">${mugPeek(f.sp)}</div>`; }
+    // it settles... then Sam flips it the right way up and the critter peeks over the rim
+    if (el) { el.firstChild?.classList.add("settle"); sfx.hit(); await wait(500); el.firstChild?.classList.add("flip"); await wait(450); el.innerHTML = `<div class="ball-anim peekin">${mugPeek(f.sp)}</div>`; }
     sfx.catch(); sparkle(el);
     await say(`Gotcha! ${monName(f)} was caught!`);
     S.caught[f.sp] = true;
@@ -830,9 +841,11 @@ async function tryCatch() {
     await endBattle("catch");
     return true;
   }
+  // it escapes: the mug tips over and smashes
+  if (el) { el.firstChild?.classList.add("tip"); await wait(380); sfx.miss(); smash(el); el.innerHTML = ""; }
   renderBattleKeepMsg();
   const fs = document.getElementById("foeSprite"); if (fs) { fs.className = ""; void fs.offsetWidth; fs.classList.add("popout"); }
-  await say(pick(["Argh! So close!", "It broke free!", "Almost had it!"]));
+  await say(pick(["Argh! The mug smashed!", "It broke free! RIP mug.", "Almost had it! Sweeping up the pieces..."]));
   return false;
 }
 
@@ -1002,6 +1015,7 @@ function navMove(dir) {
 }
 window.HELD = { dir: null, b: false };
 function press(key) {
+  if (window.MINI && window.MINI.key(key)) return;
   if (WORLD.active && !B && WORLD.key(key)) return;
   if (key === "up" || key === "down" || key === "left" || key === "right") return navMove(key);
   if (sayResolve && (key === "a" || key === "b")) return sayResolve();

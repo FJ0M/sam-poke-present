@@ -12,13 +12,14 @@ const S = () => window.PS.S();
 
 // ---------- tile painting ----------
 // Each tile is painted once onto a 16x16 canvas and cached.
-const SOLID = new Set("THRwSVM~#fWvkKtbpqdFCon|YajiZEQGUhlmNIJA1234567890".split(""));
+const SOLID = new Set("THRwSVM~#fWvkKtbpqdFCon|YajiZEQGUhlmNIJA1234567890!@$".split(""));
 const ENC = { ",": "grass", "e": "grass", "r": "reeds" };
 const TILE_CACHE = {};
 const pick = a => a[Math.floor(Math.random() * a.length)];
 function cv(w = TS, h = TS) { const c = document.createElement("canvas"); c.width = w; c.height = h; return c; }
 function px(x, c, X, Y, w = 1, h = 1) { x.fillStyle = c; x.fillRect(X, Y, w, h); }
 // espresso machine helpers: counter under it, and a group head pouring a shot into a cup on the drip tray
+function shelf(x) { PAINT["6"](x); px(x, "#7c4a22", 0, 5, 16, 2); px(x, "#9a5d2c", 0, 5, 16, 1); px(x, "#7c4a22", 0, 11, 16, 2); px(x, "#9a5d2c", 0, 11, 16, 1); }
 function lmBase(x) { px(x, "#111827", 0, 12, 16, 4); px(x, "#a0672f", 0, 11, 16, 2); px(x, "#c08040", 0, 11, 16, 1); px(x, "#4b5563", 0, 10, 16, 1); }
 function lmGroup(x, X, f) { px(x, "#374151", X, 9, 4, 1); px(x, "#111827", X + 3, 9, 3, 1);
   if (f < 3) { px(x, "#6f3a17", X + 1, 10, 1, Math.min(f + 1, 1)); }
@@ -98,6 +99,14 @@ const PAINT = {
     lmGroup(x, 2, (f + 1) & 3);
     px(x, "#9ca3af", 13, 4, 1, 6); px(x, "#9ca3af", 12, 9, 2, 1); px(x, "#cbd5e1", 11, 9, 3, 2); // steam wand and jug
     if (f & 1) { px(x, "#f8fafc", 13, 2 - (f >> 1), 2, 1); px(x, "#e5e7eb", 14, 0, 1, 1); px(x, "#f8fafc", 12, 1, 1, 1); } },
+  // Rough Hands back wall: shelves of kit, bags of beans, and a coffee critter peeking out
+  "!": x => { shelf(x); px(x, "#f8fafc", 2, 1, 3, 3); px(x, "#9ca3af", 3, 0, 1, 1); px(x, "#111827", 7, 2, 3, 2); px(x, "#fbbf24", 11, 1, 3, 3);
+    px(x, "#e5e7eb", 2, 8, 4, 2); px(x, "#9ca3af", 3, 7, 2, 1); px(x, "#111827", 8, 7, 2, 3); px(x, "#a0672f", 11, 8, 3, 2); },
+  "@": x => { shelf(x); for (const [X, Y, c] of [[1, 0, "#d6b37a"], [6, 0, "#111827"], [11, 0, "#166534"], [1, 6, "#f8fafc"], [6, 6, "#b45309"], [11, 6, "#d6b37a"]]) {
+      px(x, c, X, Y + 1, 4, 4); px(x, shade(c, 0.8), X, Y + 1, 4, 1); px(x, "#fff", X + 1, Y + 3, 2, 1); } },
+  "$": (x, f) => { shelf(x); px(x, "#d6b37a", 1, 1, 4, 4); px(x, "#111827", 11, 1, 4, 4);
+    px(x, "#6f3a17", 6, 1 + (f & 1), 4, 3); px(x, "#fff", 7, 2 + (f & 1), 1, 1); px(x, "#fff", 9, 2 + (f & 1), 1, 1); px(x, "#16a34a", 7, 0 + (f & 1), 2, 1); // a coffee critter!
+    px(x, "#f8fafc", 2, 7, 4, 3); px(x, "#a0672f", 9, 7, 5, 3); },
   "C": x => { PAINT.W(x); px(x, "#78350f", 0, 6, 16, 9); px(x, "#a16207", 0, 6, 16, 2); px(x, "#9ca3af", 3, 1, 6, 5); px(x, "#1b1530", 4, 2, 4, 2); px(x, "#fff", 11, 3, 3, 3); },
   // railway, stations, stone buildings, bridges
   "|": x => { px(x, "#8a8178", 0, 0, 16, 16); const r = seeded(11); for (let i = 0; i < 8; i++) px(x, "#6f665e", Math.floor(r() * 15), Math.floor(r() * 15), 1, 1);
@@ -206,6 +215,7 @@ const LOOKS = {
   georgina: { hair: "#3f2a14", skin: "#f1c27d", shirt: "#f59e0b", shirt2: "#d97706", legs: "#1f2937", long: true },
   chloe:    { hair: "#7c2d12", skin: "#f1c27d", shirt: "#ec4899", shirt2: "#be185d", legs: "#1f2937", long: true },
   jaz:      { hair: "#0b0b10", skin: "#e8c4a0", shirt: "#1f1b24", jacket: "#111018", jacket2: "#000000", legs: "#111018", shoes: "#3b0764", long: true, fringe: true, aura: "#a855f7" },
+  inspector:{ hair: "#57534e", skin: "#e0ac69", shirt: "#f8fafc", jacket: "#7f1d1d", jacket2: "#5b1414", legs: "#1f2937", shoes: "#0b0b10", hat: "#1f2937", hat2: "#b91c1c", tache: true },
   kim:      { hair: "#78350f", skin: "#f1c27d", shirt: "#f8fafc", jacket: "#1e2a4a", jacket2: "#111a33", legs: "#111a33", shoes: "#0b0b10", police: true },
   egg:      { egghead: true, muscle: true, hair: "#5b4030", skin: "#e0a86e", shirt: "#e0a86e", shirt2: "#c48850", legs: "#1f2937", shoes: "#f1f5f9" },
   brendan:  { hair: "#7c2d12", skin: "#f1c27d", shirt: "#065f46", shirt2: "#064e3b", legs: "#1f2937", beard: true },
@@ -403,7 +413,7 @@ function loadMap(id, x, y, dir) {
   if (PLACES[id]) st.visited[id] = true;
   if (id === "stroud") { st.flags = st.flags || {}; st.flags.stroud = true; }
   pl = { x, y, dir: st.world.dir, fx: x, fy: y, moving: false, step: 0 };
-  npcs = (map.npcs || []).map(n => ({ ...n, ox: n.x, oy: n.y, fx: n.x, fy: n.y, step: 0, visible: !(n.until && flag(n.until)) && !(n.after && !flag(n.after)), homeDir: n.dir, wanderT: Math.random() * 3000 }));
+  npcs = (map.npcs || []).map(n => ({ ...n, ox: n.x, oy: n.y, fx: n.x, fy: n.y, step: 0, visible: !(n.until && flag(n.until)) && !(n.after && !flag(n.after)), homeDir: n.dir, brewDir: n.dir, wanderT: Math.random() * 3000 }));
   if (map.indoor && st.bike) st.bike = false;
   P().music(map.music === "home" ? "home" : map.music || "explore");
   P().save();
@@ -520,7 +530,7 @@ function update(now, dt) {
       const p = Math.min(1, (now - n.t0) / 260);
       n.fx = n.sx + (n.x - n.sx) * p; n.fy = n.sy + (n.y - n.sy) * p;
       if (p >= 1) { n.moving = false; n.fx = n.x; n.fy = n.y; if (n.onArrive) { const f = n.onArrive; n.onArrive = null; f(); } }
-    } else if (n.brew) { if (!busy && n.dir !== "up") { n.lookT = (n.lookT || 1500) - dt; if (n.lookT <= 0) { n.lookT = 0; n.dir = "up"; } } // back to the machine
+    } else if (n.brew) { if (!busy && n.dir !== n.brewDir) { n.lookT = (n.lookT || 1500) - dt; if (n.lookT <= 0) { n.lookT = 0; n.dir = n.brewDir; } } // back to work
     } else if (!n.wander && !n.trainer && !busy && !n.alert && !ANIMAL_LOOKS[n.look] && n.look !== "prof") {
       n.lookT = (n.lookT || 2000 + Math.random() * 4000) - dt;
       if (n.lookT <= 0) { n.lookT = 2500 + Math.random() * 4000; n.dir = n.homeDir && Math.random() < 0.6 ? n.homeDir : ["left", "right", "down"][Math.floor(Math.random() * 3)]; n.homeDir = n.homeDir || n.dir; }
@@ -557,7 +567,19 @@ async function arrived() {
   // train station doors
   if (map.trains && map.trains[key]) {
     const dest = map.trains[key];
-    const v = await showMenu(`Take the train to ${PLACES[dest].label}? (Single: £3.40)`, [{ label: "Yes please", value: 1 }, { label: "No thanks", value: 0 }]);
+    const v = await showMenu(`Take the train to ${PLACES[dest].label}? (Single: £3.40)`, [{ label: "Buy a ticket", value: 1 }, { label: "Sneak on (no ticket)", value: 2 }, { label: "No thanks", value: 0 }]);
+    if (v === 2) {
+      await showText(["Sam hops on without a ticket. It's his birthday, he's living dangerously.", "...Uh oh. A ticket inspector just got on at the other end!"], { keepBusy: true });
+      unmount();
+      const res = await window.MINIGAMES.inspector();
+      WORLD.resume();
+      busy = true;
+      await travel(dest, null, true);
+      await showText(res === "hid" ? ["You hid in the toilet until " + PLACES[dest].label + ". The inspector never knew.", "Free ride! (Please buy a ticket next time, Sam.)"]
+        : ["Inspector: No ticket? That's a £20 penalty fare, sir.", "Sam: ...It's my birthday?", "Inspector: ...Go on then. Happy birthday. Don't do it again.", "🚆 Next stop: " + PLACES[dest].label + "."]);
+      st.flags.train_dodge = st.flags.train_dodge || res === "hid";
+      return;
+    }
     if (v) { await travel(dest, "🚆 Choo choo! Next stop: " + PLACES[dest].label + ".", true); return; }
     pl.y += 1; pl.fy = pl.y; return;
   }
@@ -598,7 +620,7 @@ async function travel(dest, msg, byTrain) {
 // ---------- interacting ----------
 async function interact() {
   const [dx, dy] = DIRS[pl.dir], tx = pl.x + dx, ty = pl.y + dy, key = tx + "," + ty;
-  const n = npcAt(tx, ty);
+  const n = npcAt(tx, ty) || ("7890C".includes(tileAt(tx, ty)) ? npcAt(tx + dx, ty + dy) : null); // talk across the bar
   if (n) {
     n.dir = dirOf(-dx, -dy);
     if (n.trainer && !flag(n.trainer.flag)) return trainerBattle(n);
@@ -613,6 +635,13 @@ async function interact() {
   if (th && th.cake) {
     if (!flag("letter")) return showText(["The birthday cake! You'd better blow out the candles... wait, what was that noise in the hallway?"]);
     return showText(flag("finished") ? ["The cake. What's left of it. Delicious. Happy birthday, Mr Chicken!"] : CONFIG.cakeLocked);
+  }
+  if (th && th.critters) {
+    await showText(th.text, { keepBusy: true });
+    const st = S(), lvl = Math.max(8, Math.min(18, ...st.team.map(m => m.level)));
+    const sp = th.critters[Math.floor(Math.random() * th.critters.length)];
+    flash(() => { unmount(); P().startBattle({ wild: true, team: [P().makeMon(sp, lvl - 1 + Math.floor(Math.random() * 3))] }); });
+    return;
   }
   if (th) {
     const lines = Array.isArray(th) ? th : th.text;
@@ -718,6 +747,27 @@ async function trainerBattle(n) {
   busy = true;
   const T = n.trainer;
   await showText(T.intro, { keepBusy: true });
+  if (T.wallballs) {
+    const v = await showMenu("Egg: So what'll it be?", [{ label: "50 wall balls", value: "wb" }, { label: "Fight Egg", value: "fight" }]);
+    if (v === "wb") {
+      unmount();
+      const res = await window.MINIGAMES.wallBalls();
+      WORLD.resume(); busy = true;
+      if (res.win) {
+        const st = S(); st.flags[T.flag] = true;
+        const lvl = Math.max(10, ...st.team.map(m => m.level));
+        const prize = P().makeMon(T.wallballs, lvl);
+        st.seen[T.wallballs] = st.caught[T.wallballs] = true;
+        if (st.team.length < 6) st.team.push(prize); else st.box.push(prize);
+        P().sfx.catch(); P().save();
+        await showText([`Egg: ${res.reps} WALL BALLS in ${Math.floor(res.secs / 60)}:${String(res.secs % 60).padStart(2, "0")}! Mr Chicken, I'm... I'm welling up.`,
+          `Egg: You've earned this. Take my ${SPECIES[T.wallballs].name}. It's been waiting for someone who suffers like you.`,
+          `${SPECIES[T.wallballs].name} joined your team at level ${lvl}!`, "Sam lies on the floor for a while. A long while."]);
+        return;
+      }
+      await showText([`Egg: ${res.reps} reps? That's a no-rep life, Sam.`, "Egg: Right. You'll have to go through me then!"], { keepBusy: true });
+    }
+  }
   unmount();
   P().startBattle({ wild: false, trainer: T, look: n.look, team: T.team.map(([sp, l]) => P().makeMon(sp, l)) });
 }
@@ -757,7 +807,7 @@ function draw() {
     const t = tileAt(x, y); if (t === undefined) continue;
     const v = (t === "." || t === "=" || t === "O") ? ((x * 7 + y * 13 + ((x * y) >> 1)) & 3) : 0;
     const img = (SWAY[t] && ((sway + x + (y >> 1)) & 1)) ? swayImg(t, v)
-      : tileImg(t, (t === "~" || t === "B") ? ((frame + x + y) & 3) : (t === "8" || t === "9" || t === "0") ? frame : (t === "r" || t === "," || t === "e") ? ((frame >> 1) + x) & 1 : 0, v);
+      : tileImg(t, (t === "~" || t === "B") ? ((frame + x + y) & 3) : (t === "8" || t === "9" || t === "0" || t === "$") ? frame : (t === "r" || t === "," || t === "e") ? ((frame >> 1) + x) & 1 : 0, v);
     ctx.drawImage(img, x * TS - camX + offX, y * TS - camY + offY);
   }
   // painted shop signs
@@ -767,7 +817,7 @@ function draw() {
   ctx.imageSmoothingEnabled = false;
   // characters, sorted by y
   const list = npcs.filter(n => n.visible).map((n, i) => ({ img: charSprite(n.look, n.dir, n.moving ? n.step : (ANIMAL_LOOKS[n.look] ? (tick + i) & 1 : 0)), x: n.fx + (n.playfight ? ((frame & 1) ? 0.08 : -0.08) * (i % 2 ? 1 : -1) : 0), y: n.fy - (n.playfight && (frame & 2) ? 0.1 : 0), alert: n.alert,
-    aura: (LOOKS[n.look] || {}).aura, brew: n.dir === "up" && n.brew,
+    aura: (LOOKS[n.look] || {}).aura, brew: n.dir === (n.brewDir || "up") && n.brew,
     bob: !n.moving && !ANIMAL_LOOKS[n.look] && ((tick + i) % 3 === 0) ? 1 : 0 }));
   const st = S();
   const bike = st.bike && !map.indoor;
@@ -795,14 +845,14 @@ function baristaProp(kind, X, Y) {
   const p = (c, a, b, w = 1, h = 1) => { ctx.fillStyle = c; ctx.fillRect(X + a, Y + b, w, h); };
   const t = (frame + (kind === "milk" ? 2 : 0)) & 3;
   if (kind === "shot") {
-    // tamp, lock in, pour, serve
-    const hx = t === 0 ? 11 : t === 1 ? 9 : 12, hy = t === 0 ? 8 : 6;
-    p("#374151", hx, hy, 3, 2); p("#111827", hx + 3, hy, 2, 1);
-    if (t >= 2) { p("#f8fafc", 2, 6, 3, 3); p(t === 3 ? "#c08040" : "#6f3a17", 3, 6, 1, 2); }
+    // grind, tamp, lock in the portafilter, hand over the espresso
+    if (t === 0) { p("#374151", 4, 10, 4, 2); p("#111827", 2, 10, 2, 1); p("#6f3a17", 5, 9, 2, 1); }
+    else if (t === 1) { p("#374151", 6, 11, 4, 2); p("#9ca3af", 7, 8, 2, 3); }
+    else { p("#f8fafc", 10, 10, 3, 3); p(t === 3 ? "#c08040" : "#6f3a17", 11, 10, 1, 1); p("#f8fafc", 12, 7 - (frame & 1), 1, 1); }
   } else {
-    // steam (jug up with puffs), then pour latte art into a cup
-    if (t < 2) { p("#cbd5e1", 11, 5 - t, 3, 4); p("#9ca3af", 14, 6 - t, 1, 2); p("#f8fafc", 12, 2 - t, 2, 1); p("#e5e7eb", 13, 1 - t, 1, 1); }
-    else { p("#cbd5e1", 9, 6, 3, 3); p("#f8fafc", 8, 9, 1, 1); p("#f8fafc", 6, 9, 3, 3); p("#c08040", 7, 9, 1, 1); if (t === 3) p("#fff", 7, 10, 1, 1); }
+    // steam the milk (jug with puffs), then pour a little heart into a flat white
+    if (t < 2) { p("#cbd5e1", 9, 9, 3, 4); p("#9ca3af", 8, 10, 1, 2); p("#f8fafc", 10, 6 - t, 2, 1); p("#e5e7eb", 11, 4 - t, 1, 1); }
+    else { p("#cbd5e1", 8, 9, 3, 3); p("#f8fafc", 6, 11, 1, 1); p("#f8fafc", 3, 11, 4, 3); p("#c08040", 4, 11, 2, 1); if (t === 3) { p("#fff", 4, 12, 1, 1); p("#fff", 5, 12, 1, 1); } }
   }
 }
 
