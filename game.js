@@ -6,7 +6,7 @@
 "use strict";
 
 const $app = document.getElementById("app");
-const SAVE_KEY = "samsters-save-v1";
+const SAVE_KEY = "pocketsam-save-v1";
 const SPEED = /[?&]fast\b/.test(location.search) ? 0.03 : 1; // ?fast for testing
 const MAX_TEAM = 6;
 const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
@@ -70,6 +70,23 @@ const MUSIC = {
     lead: [[67,1],[67,1],[69,2],[67,2],[72,2],[71,4], [67,1],[67,1],[69,2],[67,2],[74,2],[72,4],
            [67,1],[67,1],[79,2],[76,2],[72,2],[71,2],[69,4], [77,1],[77,1],[76,2],[72,2],[74,2],[72,6],[null,4]],
     bass: [[48,4],[55,4],[43,4],[55,4],[43,4],[48,4],[48,4],[53,4],[48,4],[43,4],[48,6],[null,4]] },
+  home: { bpm: 96,
+    lead: e8(76,null,72,null, 74,76,79,null, 77,null,74,null, 72,null,null,null, 74,null,71,null, 72,74,76,null, 74,72,71,72, 67,null,null,null),
+    bass: q(48,52,55,52, 53,57,60,57, 43,47,50,47, 48,52,55,48) },
+  town: { bpm: 126,
+    lead: e8(67,71,74,71, 72,null,71,69, 67,69,71,67, 64,null,null,null, 67,71,74,79, 78,null,76,74, 72,71,69,71, 67,null,null,null),
+    bass: q(43,50,43,50, 48,55,48,55, 43,50,43,50, 38,45,43,43) },
+  gym: { bpm: 160,
+    lead: e8(64,64,67,64, 69,null,67,64, 62,62,64,62, 67,null,64,null, 64,64,67,64, 71,null,69,67, 69,67,64,62, 64,null,64,null),
+    bass: q(40,40,40,40, 38,38,38,38, 40,40,40,40, 43,43,38,38) },
+  hills: { bpm: 104,
+    lead: e8(74,null,76,78, 81,null,78,null, 76,null,74,null, 71,null,73,null, 74,null,76,78, 81,null,83,81, 78,76,74,73, 74,null,null,null),
+    bass: q(50,57,50,57, 45,52,45,52, 47,54,47,54, 45,52,50,50) },
+  bike: { bpm: 168,
+    lead: e8(72,76,79,84, 79,76,72,76, 74,77,81,86, 81,77,74,77, 76,79,83,88, 83,79,76,79, 77,76,74,72, 74,null,79,null),
+    bass: q(48,48,55,55, 50,50,57,57, 52,52,59,59, 53,55,48,48) },
+  victory: { bpm: 150, loop: false,
+    lead: [[72,1],[76,1],[79,1],[84,3],[79,1],[84,6]], bass: [[48,3],[55,3],[48,6]] },
   fanfare: { bpm: 140, loop: false, then: "birthday",
     lead: [[72,1],[72,1],[72,1],[72,3],[68,3],[70,3],[72,2],[70,1],[72,6],[null,2]],
     bass: [[48,6],[44,3],[46,3],[48,6],[null,4]] },
@@ -80,6 +97,8 @@ function music(name) {
   if (mus && mus.name === name) return;
   stopMusic();
   if (!actx || muted) return;           // starts on first tap, or when unmuted
+  if (!MUSIC[name]) name = "explore";
+  if (mus && mus.name === name) return;
   const T = MUSIC[name], step = 60 / T.bpm / 2, t = actx.currentTime + 0.08;
   const st = { name, voices: [
     { seq: T.lead, i: 0, t, type: "square", vol: 0.028 },
@@ -114,7 +133,7 @@ document.addEventListener("pointerdown", () => { if (audio() && !mus && wantMusi
 // ---------- state ----------
 let S = null;
 function newState() {
-  return { started: false, team: [], box: [], balls: 10, area: 0, unlocked: 0, beaten: {}, seen: {}, caught: {}, finished: false, uid: 1 };
+  return { started: false, team: [], box: [], balls: 10, flags: {}, visited: {}, world: null, bike: false, seen: {}, caught: {}, finished: false, uid: 1 };
 }
 function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) {} }
 function load() {
@@ -141,12 +160,13 @@ function stats(m) {
   };
 }
 const monName = m => SPECIES[m.sp].name;
-const COLLECTABLE = Object.keys(SPECIES).filter(k => SPECIES[k].catchRate > 0 || Object.values(SPECIES).some(s => s.evolve && s.evolve.into === k));
+const COLLECTABLE = Object.keys(SPECIES).filter(k => SPECIES[k].catchRate > 0 || STARTERS.includes(k) || Object.values(SPECIES).some(s => s.evolve && s.evolve.into === k));
 const alive = team => team.filter(m => m.hp > 0);
 
 function effectiveness(moveType, targetType) {
-  if (TYPES[moveType].beats === targetType) return 2;
-  if (TYPES[targetType].beats === moveType) return 0.5;
+  const t = TYPES[moveType];
+  if (t.strong.includes(targetType)) return 2;
+  if (t.weak.includes(targetType)) return 0.5;
   return 1;
 }
 const stageMul = s => s >= 0 ? (2 + s) / 2 : 2 / (2 - s);
@@ -161,18 +181,24 @@ function gridToURL({ grid, pal }) {
   return c.toDataURL();
 }
 // Draws an emoji small, snaps alpha to hard edges and adds a 1px outline,
-// so every creature reads as chunky pixel art.
-function emojiToURL(emoji, n = 22) {
+// so every creature reads as chunky pixel art. opts: tint (hue degrees), badge (2nd emoji), squash (frame 2).
+function emojiToURL(emoji, n = 22, opts = {}) {
   const c = document.createElement("canvas"); c.width = c.height = n;
   const x = c.getContext("2d");
   x.textAlign = "center"; x.textBaseline = "middle";
-  x.font = `${Math.floor(n * 0.78)}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
+  const font = s => `${s}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
+  if (opts.tint) x.filter = `hue-rotate(${opts.tint}deg) saturate(1.2)`;
+  x.save();
+  if (opts.squash) { x.translate(n / 2, n); x.scale(1.06, 0.9); x.translate(-n / 2, -n); }
+  x.font = font(Math.floor(n * 0.78));
   x.fillText(emoji, n / 2, n / 2 + 1);
+  x.restore();
+  x.filter = "none";
+  if (opts.badge) { x.font = font(Math.floor(n * 0.42)); x.fillText(opts.badge, n * 0.78, n * 0.8); }
   const img = x.getImageData(0, 0, n, n), d = img.data;
   const solid = new Uint8Array(n * n);
   for (let i = 0; i < n * n; i++) {
     if (d[i * 4 + 3] > 110) { solid[i] = 1; d[i * 4 + 3] = 255;
-      // posterize a little for that limited-palette look
       for (let k = 0; k < 3; k++) d[i * 4 + k] = Math.round(d[i * 4 + k] / 32) * 32 - (d[i * 4 + k] > 240 ? 1 : 0);
     } else d[i * 4 + 3] = 0;
   }
@@ -184,10 +210,18 @@ function emojiToURL(emoji, n = 22) {
   x.putImageData(img, 0, 0);
   return c.toDataURL();
 }
-function pixURL(sp) {
-  if (PIX[sp]) return PIX[sp];
+// Hand-drawn sprites: frame 2 blinks (eyes closed) and squashes a pixel.
+function blinkGrid(h) {
+  const g = h.grid.map(r => r.replace(/[ek]/g, "b"));
+  return { ...h, grid: ["................", ...g.slice(0, 15)].map((r, i) => i === 0 ? r : r) };
+}
+function pixURL(sp, f = 0) {
+  const k = sp + ":" + f;
+  if (PIX[k]) return PIX[k];
+  const s = SPECIES[sp];
   const hand = typeof HAND_PIXELS !== "undefined" && HAND_PIXELS[sp];
-  return PIX[sp] = hand ? gridToURL(hand()) : emojiToURL(SPECIES[sp].emoji);
+  if (hand) return PIX[k] = gridToURL(f ? blinkGrid(hand()) : hand());
+  return PIX[k] = emojiToURL(s.emoji, 22, { tint: s.tint, badge: s.badge, squash: !!f });
 }
 function pixScale(sp) {
   const hand = typeof HAND_PIXELS !== "undefined" && HAND_PIXELS[sp];
@@ -199,11 +233,13 @@ const pixEmoji = (e, cls = "") => {
 };
 function sprite(sp, cls = "") {
   const s = SPECIES[sp], t = TYPES[s.type];
-  return `<div class="sprite ${cls} ${s.boss ? "boss" : ""}" style="--tc:${t.color};--sc:${pixScale(sp)}"><img class="pix" src="${pixURL(sp)}" alt="${esc(s.name)}"></div>`;
+  const delay = (sp.length * 137 % 900) / 1000;
+  return `<div class="sprite ${cls} ${s.boss ? "boss" : ""} ${s.legendary ? "legend" : ""}" style="--tc:${t.color};--sc:${pixScale(sp)}">
+    <div class="anim" style="animation-delay:-${delay}s"><img class="pix f1" src="${pixURL(sp, 0)}" alt="${esc(s.name)}"><img class="pix f2" src="${pixURL(sp, 1)}" alt=""></div></div>`;
 }
 function typeTag(type) {
   const t = TYPES[type];
-  return `<span class="tag" style="background:${t.color}">${t.emoji} ${t.name}</span>`;
+  return `<span class="tag" style="background:${t.color}">${t.name}</span>`;
 }
 function hpBar(m) {
   const max = stats(m).hp, pct = Math.max(0, m.hp / max * 100);
@@ -234,7 +270,7 @@ function titleScreen() {
       <p class="tiny">Made for ${esc(CONFIG.hero)} by ${esc(CONFIG.from)}</p>
       <p class="tiny">Your game saves automatically on this phone. Open it in the same browser each time to keep your progress.</p>
     </div>`, "bg-title");
-  on("#cont", () => { S = Object.assign(newState(), existing); areaScreen(); });
+  on("#cont", () => { S = Object.assign(newState(), existing); WORLD.resume(); });
   on("#new", () => {
     if (existing && existing.started && !confirm("Start over? Your saved game will be replaced.")) return;
     S = newState(); introScreen();
@@ -258,130 +294,51 @@ function talk(lines, portrait, next, i = 0) {
   on("#next", () => talk(lines, portrait, next, i + 1));
 }
 
+const profPortrait = () => `<img class="pix portrait" src="${WORLD.look("prof").toDataURL()}" alt="">`;
 function introScreen() {
-  const chloe = pixEmoji(CONFIG.narratorEmoji || "👩", "portrait");
-  talk(CONFIG.nameIntro, chloe, nameScreen);
+  talk(CONFIG.profIntro, profPortrait(), nameScreen);
 }
 
-// The gag: whatever he types comes out as MR CHICKEN.
+// The gag: type anything you like... then the professor decides you're MR CHICKEN.
 function nameScreen() {
-  const forced = CONFIG.forcedName.toUpperCase();
   screen(`
     <div class="intro">
-      <div class="hero">${pixEmoji(CONFIG.narratorEmoji || "👩", "portrait")}</div>
-      <div class="dialog"><b class="who">${esc(CONFIG.narrator)}</b>What's your name?</div>
+      <div class="hero">${profPortrait()}</div>
+      <div class="dialog"><b class="who">${esc(CONFIG.professor)}</b>What's your name?</div>
       <div class="name-box">
-        <input id="nm" maxlength="${forced.length}" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" placeholder="TYPE YOUR NAME" inputmode="text">
+        <input id="nm" maxlength="12" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" placeholder="TYPE YOUR NAME" inputmode="text">
         <button class="btn big" id="ok">OK</button>
       </div>
       <p class="tiny" id="hint">&nbsp;</p>
     </div>`, "bg-title");
   const inp = document.getElementById("nm");
-  let tries = 0;
-  inp.addEventListener("input", () => {
-    const n = Math.min(inp.value.length, forced.length);
-    inp.value = forced.slice(0, n);
-    if (n) sfx.tap();
-    if (n >= 3 && !tries++) document.getElementById("hint").textContent = "Hmm. That doesn't look right...";
-  });
+  inp.addEventListener("input", () => { inp.value = inp.value.toUpperCase(); if (inp.value) sfx.tap(); });
   setTimeout(() => inp.focus(), 50);
   on("#ok", () => {
-    if (!inp.value.length) { document.getElementById("hint").textContent = "Go on, type your name!"; return; }
+    if (!inp.value.trim()) { document.getElementById("hint").textContent = "Go on, type your name!"; return; }
     inp.blur();
+    const typed = inp.value.trim();
+    S.typedName = typed;
     S.name = CONFIG.forcedName;
-    sfx.bawk();
-    talk(CONFIG.nameReaction, pixEmoji(CONFIG.narratorEmoji || "👩", "portrait"),
-      () => talk(CONFIG.intro, `<img class="pix portrait" src="${pixURL("mrchicken")}" alt="">`, starterScreen));
+    talk([`Prof. Doverow: ${typed}? ${typed}...`, ...CONFIG.nameReaction], profPortrait(), () => {
+      sfx.bawk();
+      S.started = true; save();
+      WORLD.begin();
+    });
   });
 }
 
-function starterScreen() {
-  screen(`
-    <div class="page">
-      <h2>Choose your partner</h2>
-      <div class="starters">
-        ${STARTERS.map(sp => `
-          <button class="card starter" data-sp="${sp}">
-            ${sprite(sp, "bob")}
-            <b>${SPECIES[sp].name}</b> ${typeTag(SPECIES[sp].type)}
-            <small>${esc(SPECIES[sp].flavor)}</small>
-          </button>`).join("")}
-      </div>
-    </div>`, "bg-title");
-  on(".starter", el => {
-    const sp = el.dataset.sp;
-    if (!confirm(`Choose ${SPECIES[sp].name}?`)) return;
-    const m = makeMon(sp, 5);
-    S.team.push(m); S.seen[sp] = S.caught[sp] = true; S.started = true;
-    save(); areaScreen(`${SPECIES[sp].name} joined your team!`);
-  });
+function giveStarters() {
+  for (const sp of STARTERS) { const m = makeMon(sp, 5); S.team.push(m); S.seen[sp] = S.caught[sp] = true; }
+  save();
 }
+const areaScreen = toast => WORLD.resume(toast);
 
-// ---------- area / map ----------
-function areaScreen(toast) {
-  music("explore");
-  const A = AREAS[S.area], T = A.trainer, beat = S.beaten[A.id];
-  const lead = S.team[0];
-  screen(`
-    <div class="area-head" style="background:linear-gradient(160deg,${A.bg[0]},${A.bg[1]})">
-      <div class="area-emoji">${pixEmoji(A.emoji)}</div>
-      <h2>${esc(A.name)}</h2>
-      <p>${esc(A.desc)}</p>
-    </div>
-    <div class="page">
-      ${toast ? `<div class="toast">${esc(toast)}</div>` : ""}
-      <div class="lead card">${sprite(lead.sp, "sm")}<div class="grow"><b>${monName(lead)}</b> Lv${lead.level}${hpBar(lead)}<small>${lead.hp}/${stats(lead).hp} HP</small></div></div>
-      <button class="btn big" id="explore">🌿 Explore for wild Samsters</button>
-      <button class="btn big ${beat ? "done" : "warn"}" id="trainer" ${beat ? "disabled" : ""}>
-        ${T.emoji} ${beat ? `Beat ${esc(T.name)} ✓` : `Challenge ${esc(T.name)}`}
-      </button>
-      <button class="btn" id="heal">${CONFIG.healEmoji} Rest at ${esc(CONFIG.healPlace)}</button>
-      <div class="row">
-        <button class="btn" id="team">🎒 Team</button>
-        <button class="btn" id="dex">📖 ${esc(CONFIG.dexName)}</button>
-        <button class="btn" id="map">🗺️ Travel</button>
-      </div>
-      <p class="tiny center">${CONFIG.ballEmoji} ${S.balls} ${esc(CONFIG.ballName)}s · ${Object.keys(S.caught).length}/${COLLECTABLE.length} collected</p>
-      ${S.finished ? `<button class="btn ghost" id="ending">🎂 See the birthday message again</button>` : ""}
-    </div>`);
-  on("#explore", () => {
-    if (!alive(S.team).length) return areaScreen("Your team is too tired! Rest first.");
-    const total = A.wild.reduce((a, w) => a + (w[3] || 10), 0);
-    let r = Math.random() * total, entry = A.wild[0];
-    for (const w of A.wild) { if ((r -= (w[3] || 10)) <= 0) { entry = w; break; } }
-    const [sp, lo, hi] = entry;
-    startBattle({ wild: true, team: [makeMon(sp, rnd(lo, hi))] });
-  });
-  on("#trainer", () => {
-    if (!alive(S.team).length) return areaScreen("Your team is too tired! Rest first.");
-    startBattle({ wild: false, trainer: T, team: T.team.map(([sp, l]) => makeMon(sp, l)) });
-  });
-  on("#heal", () => { healAll(); sfx.heal(); areaScreen(`Your team had a lovely rest. Fully healed! (${CONFIG.ballName}s topped up)`); });
-  on("#team", () => teamScreen());
-  on("#dex", () => dexScreen());
-  on("#map", () => mapScreen());
-  on("#ending", () => endingScreen());
-}
+// ---------- healing ----------
 function healAll() {
   [...S.team, ...S.box].forEach(m => m.hp = stats(m).hp);
   S.balls = Math.max(S.balls, 5);
   save();
-}
-
-function mapScreen() {
-  screen(`
-    <div class="page">
-      <h2>🗺️ Where to?</h2>
-      ${AREAS.map((A, i) => `
-        <button class="card area-btn ${i > S.unlocked ? "locked" : ""} ${i === S.area ? "here" : ""}" data-i="${i}" ${i > S.unlocked ? "disabled" : ""}
-          style="background:linear-gradient(120deg,${A.bg[0]},${A.bg[1]})">
-          <span class="area-emoji sm">${pixEmoji(i > S.unlocked ? "🔒" : A.emoji)}</span>
-          <div class="grow"><b>${esc(A.name)}</b><small>${i > S.unlocked ? `Beat ${esc(AREAS[i - 1].trainer.name)} to unlock` : S.beaten[A.id] ? "Cleared ✓" : esc(A.desc)}</small></div>
-        </button>`).join("")}
-      <button class="btn" id="back">← Back</button>
-    </div>`);
-  on(".area-btn", el => { S.area = +el.dataset.i; save(); areaScreen(); });
-  on("#back", () => areaScreen());
 }
 
 // ---------- team ----------
@@ -458,13 +415,14 @@ function startBattle(opts) {
   B.foes.forEach(f => S.seen[f.sp] = true);
   music(B.trainer && B.trainer.boss ? "boss" : "battle");
   B.participants.add(S.team[B.pi].uid);
-  renderBattle();
+  B.enter = "f"; renderBattle(); B.enter = null;
   (async () => {
     if (B.wild) await say(`A wild ${monName(foe())} appeared!`);
     else {
-      await say(`${B.trainer.name}: "${B.trainer.intro}"`);
+      await say(`${B.trainer.name} wants to battle!`);
       await say(`${B.trainer.name} sent out ${monName(foe())}!`);
     }
+    const ms = document.getElementById("meSprite"); if (ms) { ms.className = ""; void ms.offsetWidth; ms.classList.add("enter-p"); }
     await say(`Go, ${monName(me())}!`);
     menu();
   })();
@@ -473,19 +431,19 @@ const me = () => S.team[B.pi];
 const foe = () => B.foes[B.fi];
 
 function renderBattle() {
-  const f = foe(), p = me(), A = AREAS[S.area];
+  const f = foe(), p = me(), bg = WORLD.battleBg();
   screen(`
-    <div class="battle" style="background:linear-gradient(180deg,${A.bg[0]},${A.bg[1]})">
+    <div class="battle" style="background:linear-gradient(180deg,${bg[0]},${bg[1]})">
       <div class="side foe">
         <div class="plate">
           <b>${monName(f)}</b> <span>Lv${f.level}</span> ${typeTag(SPECIES[f.sp].type)}
           ${hpBar(f)}
           ${B.trainer ? `<small>${B.foes.map(m => m.hp > 0 ? "●" : "○").join(" ")}</small>` : ""}
         </div>
-        <div id="foeSprite">${sprite(f.sp, "bob")}</div>
+        <div id="foeSprite" class="${B.enter === "f" ? "enter-f" : ""}">${sprite(f.sp)}</div>
       </div>
       <div class="side me">
-        <div id="meSprite">${sprite(p.sp, "back")}</div>
+        <div id="meSprite" class="${B.enter === "p" ? "enter-p" : ""}">${sprite(p.sp, "back")}</div>
         <div class="plate">
           <b>${monName(p)}</b> <span>Lv${p.level}</span> ${typeTag(SPECIES[p.sp].type)}
           ${hpBar(p)}<small>${p.hp}/${stats(p).hp} HP</small>
@@ -627,6 +585,8 @@ async function useMove(who, id) {
   const aSt = B.stage[who], dSt = B.stage[who === "p" ? "f" : "p"];
   const mv = MOVES[id];
   const prefix = who === "f" ? (B.wild ? "Wild " : "Foe ") : "";
+  const atkEl = document.getElementById(who === "p" ? "meSprite" : "foeSprite");
+  if (atkEl) { atkEl.className = ""; void atkEl.offsetWidth; atkEl.classList.add(mv.power ? (who === "p" ? "lunge-p" : "lunge-f") : "buff"); }
   await say(`${prefix}${monName(atkM)} used ${mv.name}!`, 900);
 
   if (Math.random() * 100 > mv.acc) { await say("But it missed!"); return false; }
@@ -653,8 +613,9 @@ async function useMove(who, id) {
 
   const el = document.getElementById(who === "p" ? "foeSprite" : "meSprite");
   eff > 1 ? sfx.super() : sfx.hit();
-  if (el) { el.classList.remove("shake"); void el.offsetWidth; el.classList.add("shake"); }
   renderBattleKeepMsg();
+  const hitEl = document.getElementById(who === "p" ? "foeSprite" : "meSprite");
+  if (hitEl) { hitEl.className = ""; void hitEl.offsetWidth; hitEl.classList.add("hit"); hitEl.style.setProperty("--hc", TYPES[mv.type].color); }
   if (crit > 1) await say("A critical hit!", 900);
   if (eff > 1) await say("It's super effective!", 900);
   if (eff < 1) await say("It's not very effective...", 900);
@@ -741,12 +702,14 @@ async function foeFainted() {
   if (B.fi < B.foes.length - 1 && alive(B.foes).length) {
     B.fi++; B.stage.f = { atk: 0, def: 0, spd: 0 };
     renderBattle();
+    B.enter = "f"; renderBattle(); B.enter = null;
     await say(`${B.trainer.name} sent out ${monName(foe())}!`);
     return menu();
   }
   if (B.trainer) {
+    music("victory");
     await say(`You beat ${B.trainer.name}!`);
-    await say(`${B.trainer.name}: "${B.trainer.win}"`);
+    for (const line of B.trainer.win) await say(line);
   }
   return endBattle("win");
 }
@@ -754,31 +717,24 @@ async function foeFainted() {
 async function playerFainted() {
   if (alive(S.team).length) return switchMenu(true);
   await say(`${heroName()} is out of usable Samsters!`);
-  await say(`${heroName()} hurried back to ${CONFIG.healPlace}...`);
   healAll();
   endBattle("lose");
 }
 
 async function endBattle(result) {
-  const wasTrainer = B.trainer;
-  // evolutions
+  const trainer = B.trainer;
   for (const m of S.team) {
     let ev;
     while ((ev = SPECIES[m.sp].evolve) && m.level >= ev.at && m.hp > 0) await evolve(m, ev.into);
   }
   B = null;
-  let toast = null;
-  if (result === "win" && wasTrainer) {
-    const A = AREAS[S.area];
-    S.beaten[A.id] = true;
-    S.balls += 5;
-    if (wasTrainer.boss) { S.finished = true; save(); return endingScreen(); }
-    S.unlocked = Math.max(S.unlocked, S.area + 1);
-    toast = `${AREAS[S.area + 1].name} unlocked! (+5 ${CONFIG.ballName}s) Tap Travel to go there.`;
+  if (result === "win" && trainer) {
+    S.flags[trainer.flag] = true;
+    S.balls += trainer.reward || 0;
+    if (trainer.boss) { S.finished = true; save(); return endingScreen(); }
   }
-  if (result === "lose") toast = "Your team has been healed. Try again!";
   save();
-  areaScreen(toast);
+  WORLD.afterBattle(result, trainer);
 }
 
 function evolve(m, into) {
@@ -815,9 +771,10 @@ function endingScreen() {
       ${confetti}
       <div class="cake">${pixEmoji("🎂")}</div>
       <h1>Happy Birthday<br>${esc(CONFIG.hero)}!</h1>
+      <p class="tiny">(also known as Mr Chicken)</p>
       ${CONFIG.age ? `<div class="age">${esc(CONFIG.age)}</div>` : ""}
       <div class="dialog">${esc(CONFIG.birthdayMessage)}</div>
-      <div class="team-row">${S.team.map(m => sprite(m.sp, "sm bob")).join("")}</div>
+      <div class="team-row">${S.team.map(m => sprite(m.sp, "sm")).join("")}</div>
       <p class="tiny">Collected ${Object.keys(S.caught).length}/${COLLECTABLE.length} Samsters</p>
       <button class="btn big" id="keep">Keep exploring</button>
     </div>`, "bg-party");
@@ -867,7 +824,9 @@ function navMove(dir) {
   if (best) { navSet(best); beep(520, 0.03); }
   else if (dir === "up" || dir === "down") $app.scrollBy({ top: dir === "up" ? -120 : 120, behavior: "smooth" });
 }
+window.HELD = { dir: null, b: false };
 function press(key) {
+  if (WORLD.active && !B && WORLD.key(key)) return;
   if (key === "up" || key === "down" || key === "left" || key === "right") return navMove(key);
   if (sayResolve && (key === "a" || key === "b")) return sayResolve();
   if (key === "a") {
@@ -890,21 +849,40 @@ document.querySelectorAll("#pad [data-k]").forEach(btn => {
   let rep = null;
   const fire = () => press(btn.dataset.k);
   btn.addEventListener("pointerdown", e => {
-    e.preventDefault(); btn.classList.add("pressed"); fire();
+    e.preventDefault(); btn.classList.add("pressed");
+    const k = btn.dataset.k;
+    if (btn.classList.contains("dp")) HELD.dir = k;
+    if (k === "b") HELD.b = true;
+    fire();
     if (btn.classList.contains("dp")) rep = setTimeout(function r() { fire(); rep = setTimeout(r, 140); }, 380);
   });
-  const up = () => { btn.classList.remove("pressed"); clearTimeout(rep); };
+  const up = () => { btn.classList.remove("pressed"); clearTimeout(rep);
+    if (HELD.dir === btn.dataset.k) HELD.dir = null; if (btn.dataset.k === "b") HELD.b = false; };
   btn.addEventListener("pointerup", up); btn.addEventListener("pointerleave", up); btn.addEventListener("pointercancel", up);
   btn.addEventListener("contextmenu", e => e.preventDefault());
+});
+document.addEventListener("keyup", e => {
+  const k = { ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right" }[e.key];
+  if (k && HELD.dir === k) HELD.dir = null;
+  if (e.key === "x" || e.key === "Backspace" || e.key === "Escape") HELD.b = false;
 });
 document.addEventListener("keydown", e => {
   if (e.target.tagName === "INPUT" && e.key !== "Enter") return;
   const k = { ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right", z: "a", Enter: "a", " ": "a", x: "b", Backspace: "b", Escape: "b", s: "start", a: "select" }[e.key];
   if (!k) return;
   e.preventDefault();
+  if (["up", "down", "left", "right"].includes(k)) HELD.dir = k;
+  if (k === "b") HELD.b = true;
   if (k === "a" && e.target.tagName === "INPUT") { e.target.blur(); const ok = $app.querySelector("#ok"); if (ok) ok.click(); return; }
   press(k);
 });
+
+// ---------- helpers for world.js ----------
+window.PS = {
+  S: () => S, save, music, sfx, beep, toggleMute, isMuted: () => muted, screen, esc, fill, heroName,
+  healAll, makeMon, startBattle, teamScreen, dexScreen, giveStarters, pixURL,
+  alive: () => alive(S.team),
+};
 
 // ---------- boot ----------
 document.title = CONFIG.title;
