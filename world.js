@@ -191,7 +191,7 @@ const LOOKS = {
   chloe:    { hair: "#7c2d12", skin: "#f1c27d", shirt: "#ec4899", shirt2: "#be185d", legs: "#1f2937", long: true },
   jaz:      { hair: "#0b0b10", skin: "#e8c4a0", shirt: "#1f1b24", jacket: "#111018", jacket2: "#000000", legs: "#111018", shoes: "#3b0764", long: true, fringe: true, aura: "#a855f7" },
   kim:      { hair: "#78350f", skin: "#f1c27d", shirt: "#f8fafc", jacket: "#1e2a4a", jacket2: "#111a33", legs: "#111a33", shoes: "#0b0b10", police: true },
-  egg:      { egghead: true, hair: "#8a6a4a", skin: "#f3e3c3", shirt: "#facc15", shirt2: "#ca8a04", legs: "#1f2937", shoes: "#f1f5f9" },
+  egg:      { egghead: true, muscle: true, hair: "#5b4030", skin: "#e0a86e", shirt: "#e0a86e", shirt2: "#c48850", legs: "#1f2937", shoes: "#f1f5f9" },
   brendan:  { hair: "#7c2d12", skin: "#f1c27d", shirt: "#065f46", shirt2: "#064e3b", legs: "#1f2937", beard: true },
   davide:   { hair: "#1f2937", skin: "#d6a06b", shirt: "#7c3aed", shirt2: "#5b21b6", legs: "#374151", glasses: true },
   surfer:   { hair: "#fde047", skin: "#e0ac69", shirt: "#0f172a", jacket: "#0f172a", jacket2: "#1e293b", legs: "#0f172a", shoes: "#0f172a", long: true },
@@ -262,6 +262,16 @@ function personSprite(look, dir, step, bike) {
     if (tee) { px(x, tee, 6, Y(8), 4, 5); px(x, shade(tee, 0.85), 6, Y(12), 4, 1); px(x, top2, 6, Y(8), 1, 5); px(x, top2, 9, Y(8), 1, 5); }
     else { px(x, shade(top, 0.85), 4, Y(12), 8, 1); px(x, L.skin, 7, Y(8), 2, 1); }
     px(x, top, 3, Y(8), 1, 4); px(x, top, 12, Y(8), 1, 4); px(x, L.skin, 3, Y(12), 1, 1); px(x, L.skin, 12, Y(12), 1, 1);
+  }
+  // shirtless and jacked (Coach Egg): big arms, pecs, abs
+  if (L.muscle) {
+    const sk2 = shade(L.skin, 0.8);
+    if (d === "left") { px(x, L.skin, 6, Y(8), 4, 4); px(x, sk2, 6, Y(11), 3, 1); px(x, sk2, 9, Y(9), 1, 1); }
+    else {
+      px(x, L.skin, 2, Y(8), 2, 4); px(x, L.skin, 12, Y(8), 2, 4); px(x, sk2, 2, Y(10), 1, 1); px(x, sk2, 13, Y(10), 1, 1);
+      if (d === "down") { px(x, sk2, 5, Y(10), 2, 1); px(x, sk2, 9, Y(10), 2, 1); px(x, sk2, 7, Y(9), 2, 1); px(x, sk2, 7, Y(11), 1, 1); px(x, sk2, 8, Y(12), 1, 1); px(x, sk2, 6, Y(12), 1, 1); px(x, sk2, 9, Y(11), 1, 1); }
+      else { px(x, sk2, 7, Y(8), 2, 4); px(x, sk2, 5, Y(11), 6, 1); }
+    }
   }
   // head
   px(x, L.skin, 4, Y(2), 8, 6); px(x, skin2, 4, Y(7), 8, 1);
@@ -692,7 +702,7 @@ async function trainerBattle(n) {
   const T = n.trainer;
   await showText(T.intro, { keepBusy: true });
   unmount();
-  P().startBattle({ wild: false, trainer: T, team: T.team.map(([sp, l]) => P().makeMon(sp, l)) });
+  P().startBattle({ wild: false, trainer: T, look: n.look, team: T.team.map(([sp, l]) => P().makeMon(sp, l)) });
 }
 async function boarEvent() {
   await showText(["Surfer Sian: Alright, Mr Chicken! Happy birthday!", "Surfer Sian: The tide tables say a FIVE-STAR Severn Bore is due right about... now.",

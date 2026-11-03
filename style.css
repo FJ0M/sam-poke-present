@@ -77,12 +77,11 @@ small { display: block; opacity: .75; font-size: .8rem; }
 .toast { background: #ecfccb; border: 2px dashed #65a30d; border-radius: 0; padding: 10px; font-weight: 600; }
 
 /* sprites */
-.sprite { --tc: #a58cff; --sc: 1; width: 120px; height: 120px; display: grid; place-items: center; flex: none; position: relative;
-  background: color-mix(in srgb, var(--tc) 28%, #fff); border: 4px solid var(--ink); box-shadow: inset -6px -6px 0 color-mix(in srgb, var(--tc) 45%, #fff), var(--shadow); }
-.sprite::after { content: ""; position: absolute; left: 18%; right: 18%; bottom: 9%; height: 8%; background: rgba(27,21,48,.18); z-index: 0; }
+.sprite { --tc: #a58cff; --sc: 1; width: 120px; height: 120px; display: grid; place-items: center; flex: none; position: relative; }
+.sprite::after { content: ""; position: absolute; left: 20%; right: 20%; bottom: 6%; height: 9%; border-radius: 50%; background: rgba(27,21,48,.22); z-index: 0; }
 .sprite .pix { width: calc(92% * var(--sc)); height: calc(92% * var(--sc)); position: relative; z-index: 1; margin-top: calc((1 - var(--sc)) * 40%); }
-.sprite.sm { width: 56px; height: 56px; border-width: 3px; box-shadow: inset -3px -3px 0 color-mix(in srgb, var(--tc) 45%, #fff); }
-.sprite.boss { width: 150px; height: 150px; background: #fecaca; box-shadow: inset -6px -6px 0 #fca5a5, 0 0 0 4px #ef4444, var(--shadow); }
+.sprite.sm { width: 56px; height: 56px; }
+.sprite.boss { width: 150px; height: 150px; filter: drop-shadow(0 0 6px #ef4444) drop-shadow(0 0 2px #7f1d1d); }
 .sprite.back .pix { transform: scaleX(-1); }
 .sprite.q { --tc: #cbd5e1; font-family: "Press Start 2P", monospace; color: #64748b; }
 .portrait { width: 128px; height: 128px; }
@@ -227,13 +226,8 @@ small { display: block; opacity: .75; font-size: .8rem; }
 @keyframes f1 { 0% { visibility: visible; } 60% { visibility: hidden; } }
 @keyframes f2 { 0% { visibility: hidden; } 60% { visibility: visible; } }
 .sprite.back .anim .pix { transform: scaleX(-1); }
-.sprite.legend { box-shadow: inset -6px -6px 0 color-mix(in srgb, var(--tc) 45%, #fff), 0 0 0 3px #facc15, var(--shadow); }
+.sprite.legend { filter: drop-shadow(0 0 5px #facc15); }
 
-/* battle moves */
-.lunge-p { animation: lungeP .35s steps(4); }
-.lunge-f { animation: lungeF .35s steps(4); }
-@keyframes lungeP { 40% { transform: translate(28px, -18px); } }
-@keyframes lungeF { 40% { transform: translate(-28px, 18px); } }
 .buff { animation: buff .5s steps(4); }
 @keyframes buff { 25%,75% { transform: translateY(-8px); filter: brightness(1.4); } 50% { transform: none; } }
 .hit { position: relative; animation: flicker .6s steps(1); }
@@ -303,3 +297,47 @@ small { display: block; opacity: .75; font-size: .8rem; }
 .mnode.unk { opacity: .55; }
 .mnode.here i { animation: mbob .8s ease-in-out infinite alternate; }
 @keyframes mbob { from { transform: translateY(0); } to { transform: translateY(-3px); } }
+
+/* attack frame: the pounce pose shows while lunging */
+.sprite .anim .f3 { visibility: hidden; }
+.lunge-p .sprite .anim .f1, .lunge-p .sprite .anim .f2, .lunge-f .sprite .anim .f1, .lunge-f .sprite .anim .f2 { animation: none; visibility: hidden; }
+.lunge-p .sprite .anim .f3, .lunge-f .sprite .anim .f3 { visibility: visible; }
+.lunge-p { animation: lungeP .5s steps(6); }
+.lunge-f { animation: lungeF .5s steps(6); }
+@keyframes lungeP { 0% { transform: none; } 25% { transform: translate(-10px, 6px); } 55% { transform: translate(34px, -22px); } 100% { transform: none; } }
+@keyframes lungeF { 0% { transform: none; } 25% { transform: translate(10px, -6px); } 55% { transform: translate(-34px, 22px); } 100% { transform: none; } }
+/* idle: a little breathing bounce */
+.side .sprite .anim { animation: breathe 1.6s steps(2) infinite; }
+@keyframes breathe { 50% { transform: translateY(-2px); } }
+
+/* mugs */
+.mugimg { width: 48px; height: 48px; image-rendering: pixelated; }
+.thrown .mugimg { width: 48px; height: 48px; }
+.ball-anim { display: grid; place-items: center; }
+.ball-anim .mugimg { width: 64px; height: 64px; }
+.ball-anim.wob .mugimg, .ball-anim .mugimg.wob { animation: wob .5s steps(4); }
+.ball-anim.wob { animation: wob .5s steps(4); transform-origin: 50% 90%; }
+.mugimg.flip { animation: mugflip .45s steps(6) forwards; }
+@keyframes mugflip { 0% { transform: none; } 40% { transform: translateY(-26px) rotate(180deg); } 100% { transform: translateY(0) rotate(360deg); } }
+.mugpeek { position: relative; width: 96px; height: 124px; }
+.mugpeek .mugimg { position: absolute; left: 0; bottom: 0; width: 96px; height: 96px; z-index: 2; }
+.mugpeek .peek { position: absolute; left: 10px; bottom: 62px; width: 64px; height: 44px; overflow: hidden; z-index: 1; }
+.mugpeek .peek img { width: 64px; height: 64px; }
+.mugpeek .paw { position: absolute; bottom: 64px; width: 10px; height: 8px; background: #fff; border: 3px solid var(--ink); border-radius: 4px 4px 2px 2px; z-index: 3; }
+.mugpeek .paw.l { left: 16px; } .mugpeek .paw.r { left: 50px; }
+.peekin { animation: peekin .5s steps(5); }
+@keyframes peekin { 0% { transform: translateY(8px) scaleY(.85); } 60% { transform: translateY(-6px); } 100% { transform: none; } }
+
+/* trainers shown at the start of a battle */
+.side { position: relative; }
+#foeSprite.gone, #meSprite.gone { opacity: 0; }
+.plate.hidden-plate { opacity: 0; }
+.trainer { position: absolute; width: 128px; height: 128px; image-rendering: pixelated; z-index: 3; }
+.trainer.t-foe { right: 0; bottom: -4px; animation: tInF .45s steps(6); }
+.trainer.t-me { left: 0; bottom: -4px; width: 144px; height: 144px; animation: tInP .45s steps(6); }
+.t-out-f { animation: tOutF .38s steps(5) forwards !important; }
+.t-out-p { animation: tOutP .38s steps(5) forwards !important; }
+@keyframes tInF { from { transform: translateX(180px); } to { transform: none; } }
+@keyframes tInP { from { transform: translateX(-180px); } to { transform: none; } }
+@keyframes tOutF { to { transform: translateX(200px); opacity: 0; } }
+@keyframes tOutP { to { transform: translateX(-200px); opacity: 0; } }
