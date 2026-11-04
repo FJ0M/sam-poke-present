@@ -294,7 +294,7 @@ const MAPS = {
       "22,23": ["FIVE VALLEYS SHOPPING CENTRE", "Home of ROUGH HANDS. Proper coffee, proper tea, and the best cake in Stroud."],
       "7,23": ["Freddie & Georgina's house. A tiny knitted jumper is drying on the gate. It's Ralph's."],
     },
-    grass: [["scarlemoth",8,11],["ramsomp",8,11],["badgerlad",9,11],["skylarky",8,10],["beechling",9,11,4],["arabicub",8,11,6],["robustling",8,11,6],["aeropuss",9,11,4],["v60wl",9,11,4],["mokapot",10,12,3],["cremagolem",11,12,1]],
+    grass: [["scarlemoth",8,11],["ramsomp",8,11],["badgerlad",9,11],["skylarky",8,10],["beechling",9,11,4],["arabicub",8,11,6],["kettlebear",9,11,4],["robustling",8,11,6],["aeropuss",9,11,4],["v60wl",9,11,4],["mokapot",10,12,3],["cremagolem",11,12,1]],
     npcs: [
       { id: "stall", x: 8, y: 13, look: "npc6", dir: "up", heal: true,
         text: ["Market stallholder: You look shattered, love. Have a cuppa on the house. Milky, two sugars. Oh, soy? Go on then.", "Your team is fully rested!"] },
@@ -478,7 +478,7 @@ const MAPS = {
       "5,5": ["FRAMILODE", "Where the Stroudwater Canal meets the River Severn.", "On the biggest spring tides, the Severn Bore surges UP the river from the sea. Each one gets a star rating. Five stars is the best."],
       "15,5": ["A bench facing the river. A sticker on it says 'I SURVIVED A FIVE STAR BORE'."],
     },
-    grass: [["chicklet",4,6],["fezzant",4,6],["skylarky",4,6],["heronimo",5,7,4]],
+    grass: [["chicklet",4,6],["fezzant",4,6],["skylarky",4,6],["heronimo",5,7,4],["teapotamus",5,7,3]],
     reeds: [["towpathduck",4,7],["swanky",5,7],["kingfizz",5,7],["heronimo",6,8,6]],
     npcs: [
       { id: "surfer", x: 10, y: 5, look: "surfer", dir: "up", event: "boar",

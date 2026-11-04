@@ -945,7 +945,11 @@ async function tryCatch() {
   if (el) { const under = el.querySelector(".sprite .f1")?.src || pixURL(f.sp, 0);
     el.innerHTML = `<div class="ball-anim cover"><img class="pix under" src="${under}" alt="">${mugImg("inv")}</div>`; }
   await new Promise(r => setTimeout(r, 600));
-  const chance = rate * (1.15 - 0.85 * f.hp / max);
+  // lower HP helps, and so does your critter being much higher level (up to double at 10+ levels above)
+  const lvl = Math.min(2, Math.max(1, 1 + (me().level - f.level) / 10));
+  // a napping critter is much easier to cover; cramp, scalds and food poisoning help a bit
+  const stb = f.status === "sleep" ? 2 : f.status ? 1.5 : 1;
+  const chance = rate * (1.15 - 0.85 * f.hp / max) * lvl * stb;
   const ok = Math.random() < chance;
   const wobbles = ok ? 3 : rnd(0, 2);
   for (let i = 0; i < wobbles; i++) { sfx.wobble(); el?.firstChild?.classList.add("wob"); await say("...".slice(0, i + 1), 600); el?.firstChild?.classList.remove("wob"); }
@@ -955,6 +959,7 @@ async function tryCatch() {
     sfx.catch(); sparkle(el);
     await say(`Gotcha! ${monName(f)} was caught!`);
     S.caught[f.sp] = true;
+    if (f.sp === "severnboar") S.flags.boar = true;
     f.uid = S.uid++;
     if (S.team.length < MAX_TEAM) S.team.push(f);
     else { S.box.push(f); await say(`Your team is full, so ${monName(f)} went to the Box.`); }
