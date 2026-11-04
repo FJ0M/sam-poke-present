@@ -397,3 +397,62 @@ small { display: block; opacity: .75; font-size: .8rem; }
 
 /* status effects: Scalded, Food Poisoning, Cramp, Nap, Jitters */
 .st { display: inline-block; padding: 1px 4px; border: 2px solid #1b1530; border-radius: 4px; color: #fff; font-size: 9px; line-height: 1.2; vertical-align: middle; text-shadow: 1px 1px 0 #1b1530; }
+
+/* small phones: shrink the battle scene so it never spills into the text box (Sam's phone) */
+.battle { container-type: size; }
+@container (max-height: 330px) {
+  .side .sprite { width: 88px; height: 88px; }
+  .side .sprite.boss { width: 104px; height: 104px; }
+  .side .trainer { transform: scale(.75); transform-origin: bottom center; }
+  .plate { padding: 5px 8px; font-size: .8rem; }
+  .plate .tag, .plate .st { font-size: 8px; padding: 1px 3px; }
+  .plate small { font-size: .65rem; }
+}
+@container (max-height: 250px) {
+  .side .sprite { width: 64px; height: 64px; }
+  .side .sprite.boss { width: 76px; height: 76px; }
+  .side .trainer { transform: scale(.55); }
+  .plate { padding: 3px 6px; }
+  .plate .hpbar { height: 6px; margin: 3px 0; }
+  .plate .xpbar { display: none; }
+}
+@media (max-height: 720px) {
+  #app.in-battle .msg { min-height: 56px; padding: 8px 12px; font-size: .95rem !important; }
+  #app.in-battle .actions { min-height: 116px; padding: 8px 10px 10px; gap: 6px; }
+  #app.in-battle .actions .btn.big { padding: 10px 6px; }
+  .battle { padding: 8px 10px 6px; }
+}
+
+/* battle text box and buttons stay the same height in every state, so the scene never jumps or overlaps */
+#app.in-battle .actions { flex: none; height: 196px; min-height: 0; overflow-y: auto; align-content: start; }
+.btn.move { padding: 8px 10px; display: flex; flex-direction: column; gap: 3px; }
+.btn.move b { font-size: .85rem; }
+.btn.move small { font-size: .62rem; line-height: 1.3; }
+.btn.move .eff { font-style: normal; }
+.mst { display: flex; align-items: center; gap: 4px; }
+.mst.inline { display: inline-flex; margin-left: 3px; vertical-align: middle; }
+.mst .st { font-size: 8px; padding: 0 3px; border-width: 1px; }
+#app.in-battle .actions .btn.ghost.wide { padding: 8px; }
+@media (max-height: 720px) {
+  #app.in-battle .actions { height: 150px; }
+  .btn.move { padding: 5px 8px; gap: 2px; }
+  .btn.move b { font-size: .75rem; }
+  #app.in-battle .actions .btn.ghost.wide { padding: 6px; }
+  #app.in-battle .actions .btn.big { font-size: .85rem; white-space: nowrap; }
+}
+@container (max-height: 180px) {
+  .side .sprite { width: 52px; height: 52px; }
+  .side .sprite.boss { width: 60px; height: 60px; }
+  .plate { padding: 2px 6px; line-height: 1.2; }
+  .plate small { font-size: .55rem; }
+}
+
+/* team and box: each critter's card is tinted and edged in its type colour */
+.card.mon.typed { border-left: 8px solid var(--tc); background: color-mix(in srgb, var(--tc) 14%, #fff); }
+.card.mon.typed .tag { font-size: .7rem; }
+
+/* Legend screen */
+.legend h1 { font-size: 2.2rem; color: #fde047; }
+.legend-parade { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px; max-width: 360px; margin: 0 auto; }
+.legend-parade .sprite.sm { width: 40px; height: 40px; }
+.trophy.master { background: #fde047; box-shadow: 0 0 8px #facc15; }

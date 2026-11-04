@@ -400,6 +400,7 @@ let map = null, mapId = null;
 let fol = null;                // lead critter trotting one tile behind Sam
 let pl = null;                 // { x, y, dir, fx, fy, moving, t0, dur, step }
 let npcs = [];
+let view = { camX: 0, camY: 0, offX: 0, offY: 0 };
 let busy = false;              // dialog / menu / cutscene
 let frame = 0;
 const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
@@ -449,6 +450,7 @@ function mount(toast) {
       <div class="w-menu" id="wmenu" hidden></div>
     </div>`, "in-world");
   canvas = document.getElementById("wc"); ctx = canvas.getContext("2d"); ctx.imageSmoothingEnabled = false;
+  canvas.addEventListener("click", tapToWalk);
   const pl_ = document.getElementById("wplace"); setTimeout(() => pl_ && pl_.classList.add("gone"), 1600);
   cancelAnimationFrame(raf); last = performance.now(); raf = requestAnimationFrame(loop);
   if (toast) showText([toast]);
@@ -538,7 +540,19 @@ function update(now, dt) {
     fol.fx = fol.sx + (fol.x - fol.sx) * p; fol.fy = fol.sy + (fol.y - fol.sy) * p;
     if (p >= 1) { pl.moving = false; pl.fx = pl.x; pl.fy = pl.y; fol.fx = fol.x; fol.fy = fol.y; arrived(); }
   } else if (!busy && window.HELD && window.HELD.dir) {
+    pl.path = null;
     tryStep(window.HELD.dir, now);
+  } else if (busy) {
+    pl.path = null;
+  } else if (pl.path) {
+    if (pl.path.length) {
+      const [nx, ny] = pl.path.shift(), dir = dirOf(nx - pl.x, ny - pl.y);
+      if (Math.abs(nx - pl.x) + Math.abs(ny - pl.y) !== 1) pl.path = null;
+      else { tryStep(dir, now); if (!pl.moving) pl.path = null; }
+    } else {
+      const face = pl.face; pl.path = null; pl.face = null;
+      if (face) { pl.dir = face; interact(); }
+    }
   }
   // npc wander + movement
   for (const n of npcs) {
@@ -558,10 +572,16 @@ function update(now, dt) {
         const d = Object.keys(DIRS)[Math.floor(Math.random() * 4)], [dx, dy] = DIRS[d];
         n.dir = d;
         const nx = n.x + dx, ny = n.y + dy;
-        if (Math.abs(nx - n.ox) <= 2 && Math.abs(ny - n.oy) <= 2 && !blocked(nx, ny, n) && !ENC[tileAt(nx, ny)]) npcMove(n, nx, ny, now);
+        if (Math.abs(nx - n.ox) <= 2 && Math.abs(ny - n.oy) <= 2 && !blocked(nx, ny, n) && !ENC[tileAt(nx, ny)] && !nearDoor(nx, ny)) npcMove(n, nx, ny, now);
       }
     }
   }
+}
+// wandering pets and people never park on or right next to a door, so they can't block your way out
+function nearDoor(x, y) {
+  const w = map.warps || {};
+  for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]) if (w[(x + dx) + "," + (y + dy)]) return true;
+  return false;
 }
 function npcMove(n, x, y, now = performance.now()) { n.sx = n.x; n.sy = n.y; n.x = x; n.y = y; n.t0 = now; n.moving = true; n.step++; }
 
@@ -637,6 +657,57 @@ async function travel(dest, msg, byTrain) {
 }
 
 // ---------- interacting ----------
+// ---------- tap to walk ----------
+// Tap a tile to walk there. Tap a person, sign or thing to walk up to it and talk/look.
+function tapToWalk(e) {
+  if (!active || busy || menuState || boxQueue) return;
+  const r = canvas.getBoundingClientRect(), cw = canvas.width, ch = canvas.height;
+  const sc = Math.min(r.width / cw, r.height / ch), ox = (r.width - cw * sc) / 2, oy = (r.height - ch * sc) / 2;
+  const px = (e.clientX - r.left - ox) / sc, py = (e.clientY - r.top - oy) / sc;
+  if (px < 0 || py < 0 || px >= cw || py >= ch) return;
+  const tx = Math.floor((px + view.camX - view.offX) / TS), ty = Math.floor((py + view.camY - view.offY) / TS);
+  if (tileAt(tx, ty) === undefined) return;
+  if (tx === pl.x && ty === pl.y) return;
+  const things = map.things || {};
+  const target = npcAt(tx, ty) || things[tx + "," + ty] || blocked(tx, ty);
+  let goals;
+  if (!target) goals = [[tx, ty, null]];
+  else {
+    // stand next to it (or across a counter from it) and face it
+    goals = [];
+    for (const d of Object.keys(DIRS)) {
+      const [dx, dy] = DIRS[d], face = dirOf(-dx, -dy);
+      goals.push([tx + dx, ty + dy, face]);
+      if ("7890C".includes(tileAt(tx + dx, ty + dy) || ".")) goals.push([tx + 2 * dx, ty + 2 * dy, face]);
+    }
+  }
+  const path = findPath(goals);
+  if (!path) { P().beep(110, .05, "square", .03); return; }
+  pl.path = path.steps; pl.face = path.face;
+  P().beep(660, .03);
+}
+function findPath(goals) {
+  const key = (x, y) => x + "," + y, want = new Map(goals.map(g => [key(g[0], g[1]), g[2]]));
+  if (want.has(key(pl.x, pl.y))) return { steps: [], face: want.get(key(pl.x, pl.y)) };
+  const prev = new Map([[key(pl.x, pl.y), null]]), q = [[pl.x, pl.y]];
+  let n = 0;
+  while (q.length && n++ < 4000) {
+    const [x, y] = q.shift();
+    for (const [dx, dy] of Object.values(DIRS)) {
+      const nx = x + dx, ny = y + dy, k = key(nx, ny);
+      if (prev.has(k) || blocked(nx, ny) || lockedAt(nx, ny)) continue;
+      prev.set(k, [x, y]);
+      if (want.has(k)) {
+        const steps = []; let c = [nx, ny];
+        while (c && !(c[0] === pl.x && c[1] === pl.y)) { steps.unshift(c); c = prev.get(key(c[0], c[1])); }
+        return { steps, face: want.get(k) };
+      }
+      q.push([nx, ny]);
+    }
+  }
+  return null;
+}
+
 async function interact() {
   const [dx, dy] = DIRS[pl.dir], tx = pl.x + dx, ty = pl.y + dy, key = tx + "," + ty;
   const n = npcAt(tx, ty) || ("7890C".includes(tileAt(tx, ty)) ? npcAt(tx + dx, ty + dy) : null); // talk across the bar
@@ -833,6 +904,7 @@ function draw() {
   const camY = Math.max(0, Math.min(map.tiles.length * TS - VH * TS, Math.round(pl.fy * TS - (VH * TS) / 2 + 8)));
   const offX = map.tiles[0].length < VW ? Math.floor((VW - map.tiles[0].length) * TS / 2) : 0;
   const offY = map.tiles.length < VH ? Math.floor((VH - map.tiles.length) * TS / 2) : 0;
+  view = { camX, camY, offX, offY };
   ctx.fillStyle = "#1b1530"; ctx.fillRect(0, 0, canvas.width, canvas.height);
   const x0 = Math.floor(camX / TS), y0 = Math.floor(camY / TS);
   for (let y = y0; y <= y0 + VH; y++) for (let x = x0; x <= x0 + VW; x++) {
@@ -896,6 +968,7 @@ function baristaProp(kind, X, Y) {
 // ---------- entry points used by game.js ----------
 const WORLD = {
   key,
+  debug: () => ({ pl, view, TS }),
   get active() { return active; },
   begin() { // brand new game: wake up on the sofa
     loadMap(START.map, START.x, START.y, START.dir);
