@@ -572,10 +572,16 @@ function update(now, dt) {
         const d = Object.keys(DIRS)[Math.floor(Math.random() * 4)], [dx, dy] = DIRS[d];
         n.dir = d;
         const nx = n.x + dx, ny = n.y + dy;
-        if (Math.abs(nx - n.ox) <= 2 && Math.abs(ny - n.oy) <= 2 && !blocked(nx, ny, n) && !ENC[tileAt(nx, ny)]) npcMove(n, nx, ny, now);
+        if (Math.abs(nx - n.ox) <= 2 && Math.abs(ny - n.oy) <= 2 && !blocked(nx, ny, n) && !ENC[tileAt(nx, ny)] && !nearDoor(nx, ny)) npcMove(n, nx, ny, now);
       }
     }
   }
+}
+// wandering pets and people never park on or right next to a door, so they can't block your way out
+function nearDoor(x, y) {
+  const w = map.warps || {};
+  for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]) if (w[(x + dx) + "," + (y + dy)]) return true;
+  return false;
 }
 function npcMove(n, x, y, now = performance.now()) { n.sx = n.x; n.sy = n.y; n.x = x; n.y = y; n.t0 = now; n.moving = true; n.step++; }
 
