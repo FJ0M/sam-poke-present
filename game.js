@@ -174,7 +174,7 @@ function awardTrophy() {
 }
 const trophyShelf = () => {
   const t = trophies();
-  return `<div class="trophies">${DIFF_ORDER.map(d => `<span class="trophy ${t[d] ? "won" : ""}" title="${DIFFS[d].name}">${t[d] ? pixEmoji(DIFFS[d].trophy) : "<i>?</i>"}<small>${DIFFS[d].name}</small></span>`).join("")}</div>`;
+  return `<div class="trophies">${DIFF_ORDER.map(d => `<span class="trophy ${t[d] ? "won" : ""}" title="${DIFFS[d].name}">${t[d] ? pixEmoji(DIFFS[d].trophy) : "<i>?</i>"}<small>${DIFFS[d].name}</small></span>`).join("")}${t.master ? `<span class="trophy won master" title="Legend">${pixEmoji("👑")}<small>Legend</small></span>` : ""}</div>`;
 };
 // Foes in battle are shifted by the difficulty's level offset.
 function scaleFoe(m) {
@@ -298,7 +298,7 @@ function sprite(sp, cls = "") {
 }
 function typeTag(type) {
   const t = TYPES[type];
-  return `<span class="tag" style="background:${t.color}">${t.name}</span>`;
+  return `<span class="tag" style="background:${t.color}">${t.emoji} ${t.name}</span>`;
 }
 const statusTag = m => {
   const k = m.hp > 0 && (m.status || (m.conf ? "conf" : null)); if (!k) return "";
@@ -410,12 +410,12 @@ function boxScreen() { teamScreen(null, true); }
 function teamScreen(msg, boxFirst) {
   const row = (m, where, i) => {
     const st = stats(m);
-    return `<div class="card mon">
+    return `<div class="card mon typed" style="--tc:${TYPES[SPECIES[m.sp].type].color}">
       ${sprite(m.sp, "sm")}
       <div class="grow">
         <b>${monName(m)}</b> Lv${m.level} ${typeTag(SPECIES[m.sp].type)} ${statusTag(m)}
         ${hpBar(m)}<small>${m.hp}/${st.hp} HP · XP ${m.xp}/${xpNeed(m.level)}</small>
-        <small class="moves">${m.moves.map(id => MOVES[id].name).join(" · ")}</small>
+        <small class="moves">${m.moves.map(id => MOVES[id].name + moveStatus(id, true)).join(" · ")}</small>
       </div>
       <div class="col">
         ${where === "team" && i > 0 ? `<button class="btn sm" data-act="lead" data-i="${i}">⭐ Lead</button>` : ""}
@@ -631,12 +631,18 @@ function fightMenu() {
       const mv = MOVES[id], t = TYPES[mv.type];
       const eff = mv.power ? effectiveness(mv.type, SPECIES[foe().sp].type) : 1;
       return `<button class="btn move" data-m="${id}" style="--tc:${t.color}">
-        <b>${mv.name}</b><small>${t.emoji} ${t.name} · ${mv.power ? `Pow ${mv.power}` : effectText(mv.effect)} · ${mv.acc}% hit${eff > 1 ? " · 💥 strong!" : eff < 1 ? " · weak" : ""}</small></button>`;
+        <b>${mv.name}${eff > 1 ? ` <i class="eff">💥</i>` : ""}</b><small>${t.emoji} ${t.name} · ${mv.power ? `Pow ${mv.power}` : effectText(mv.effect)} · ${mv.acc}%${eff < 1 ? " · weak" : ""}</small>${moveStatus(id)}</button>`;
     }).join("")}
     <button class="btn ghost wide" data-back="1">← Back</button>`);
   on("[data-m]", el => { if (!B.busy) turn({ kind: "move", id: el.dataset.m }); });
   on("[data-back]", () => menu());
 }
+// "may cause" label for moves that can inflict a status effect
+const moveStatus = (id, inline) => {
+  const ms = MOVE_STATUS[id]; if (!ms) return "";
+  const st = STATUS[ms[0]];
+  return `<small class="mst${inline ? " inline" : ""}"><span class="st" style="background:${st.color}">${st.tag}</span> ${ms[1]}%</small>`;
+};
 const effectText = e => ({ heal: "Heals", atkUp: "Attack ↑", defDown: "Foe defence ↓", spdUp: "Speed ↑" }[e] || "");
 
 function switchMenu(forced) {
@@ -1050,6 +1056,7 @@ async function endBattle(result) {
     }
   }
   save();
+  if (legendDue()) return legendScreen(() => WORLD.afterBattle(result, trainer));
   WORLD.afterBattle(result, trainer);
 }
 
@@ -1122,9 +1129,37 @@ function creditsScreen(done) {
   roll.addEventListener("animationend", () => setTimeout(end, 1200 * SPEED));
   on("#skip", end);
 }
+// ---------- the secret Legend screen: finish on Hard AND complete the Samdex ----------
+const dexComplete = () => COLLECTABLE.every(k => S.caught[k]);
+function legendDue() {
+  if (!S.finished || (S.diffFloor || S.difficulty) !== "hard" || !dexComplete() || S.flags.legend) return false;
+  S.flags.legend = true; save();
+  const t = trophies(); t.master = t.master || new Date().toISOString().slice(0, 10);
+  try { localStorage.setItem(TROPHY_KEY, JSON.stringify(t)); } catch (e) {}
+  return true;
+}
+function legendScreen(next) {
+  const all = COLLECTABLE.map(k => sprite(k, "sm")).join("");
+  const sparks = Array.from({ length: 30 }, () => `<span class="confetto" style="left:${rnd(0, 100)}%;animation-delay:${(Math.random() * 4).toFixed(2)}s;animation-duration:${(3 + Math.random() * 3).toFixed(2)}s">${pick(["👑", "✨", "🏆", "⭐"])}</span>`).join("");
+  screen(`
+    <div class="ending legend">
+      ${sparks}
+      <div class="cake">${pixEmoji("👑")}</div>
+      <h1>LEGEND</h1>
+      <div class="dialog">Hard mode beaten. All ${COLLECTABLE.length} critters caught.<br>Mr Chicken, you are the greatest ${esc(CONFIG.dexName)} champion Stroud has ever seen.</div>
+      <div class="legend-parade">${all}</div>
+      <div class="dialog">Prof. Doverow: I've been doing this for 40 years and I've never seen anything like it. Happy birthday, Sam. Truly.</div>
+      ${trophyShelf()}
+      <button class="btn big" id="legendok">👑 Take a bow</button>
+    </div>`, "bg-party");
+  music("fanfare"); sfx.level();
+  on("#legendok", () => next());
+}
+
 function endingScreen() {
   if (!endingScreen.rolled) { endingScreen.rolled = true; return creditsScreen(() => endingScreen()); }
   const won = endingScreen.won || (endingScreen.won = awardTrophy());
+  if (legendDue()) return legendScreen(() => endingScreen());
   const confetti = Array.from({ length: 40 }, () => {
     const e = pick(["🎉", "🎂", "🎈", "✨", "🥳", "🎁"]);
     return `<span class="confetto" style="left:${rnd(0, 100)}%;animation-delay:${(Math.random() * 4).toFixed(2)}s;animation-duration:${(3 + Math.random() * 3).toFixed(2)}s">${e}</span>`;
