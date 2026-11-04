@@ -644,7 +644,7 @@ async function interact() {
     n.dir = dirOf(-dx, -dy);
     if (n.trainer && !flag(n.trainer.flag)) return trainerBattle(n);
     if (n.trainer) return showText(n.trainer.after);
-    if (n.event === "boar" && !flag("boar")) return boarEvent();
+    if (n.event === "boar" && !S().caught.severnboar) return boarEvent(flag("boarSeen"));
     await showText(n.text);
     if (n.heal) { P().healAll(); P().sfx.heal(); }
     return;
@@ -803,13 +803,13 @@ async function trainerBattle(n) {
   unmount();
   P().startBattle({ wild: false, trainer: T, look: n.look, team: T.team.map(([sp, l]) => P().makeMon(sp, l)) });
 }
-async function boarEvent() {
-  await showText(["Surfer Sian: Alright, Mr Chicken! Happy birthday!", "Surfer Sian: The tide tables say a FIVE-STAR Severn Bore is due right about... now.",
+async function boarEvent(again) {
+  await showText(again ? ["Surfer Sian: Missed it? No stress. Big spring tides come in pairs.", "Surfer Sian: Here comes the next one..."] : ["Surfer Sian: Alright, Mr Chicken! Happy birthday!", "Surfer Sian: The tide tables say a FIVE-STAR Severn Bore is due right about... now.",
     "Surfer Sian: Listen!"], { keepBusy: true });
   P().beep(110, .5, "sawtooth", .06); setTimeout(() => P().beep(98, .6, "sawtooth", .06), 300);
   await showText(["A low roar rolls up the River Severn...", "A huge wave surges UPSTREAM! And riding it is...", "...a BOAR?!"], { keepBusy: true });
   if (!P().alive().length) { busy = false; return; }
-  S().flags.boar = true; P().save();
+  S().flags.boarSeen = true; P().save();
   wildBattle([["severnboar", 20, 20]]);
 }
 function wildBattle(table) {

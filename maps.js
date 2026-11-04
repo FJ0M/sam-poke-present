@@ -119,7 +119,7 @@ const MAPS = {
     van: "8,12",
     locked: {
       "25,12": { until: "never", text: ["CORNER SHOP", "A sign on the door: 'Back in 5 mins.' It's been there since 2019."] },
-      "27,8": { until: "beat_jk", text: ["CHLOE'S HOUSE", "Winnie is barking happily behind the door.", "A note: 'Popped round to Jaz and Kim's. Back soon! x'"] },
+      "27,8": { until: "beat_jk", text: ["CHLOE'S HOUSE", "You hear an excited little yap behind the door. Winnie knows it's you.", "A note: 'Popped round to Jaz and Kim's. Back soon! x'"] },
     },
     things: {
       "6,3": ["DOVEROW HILL", "Steep. Lovely views over the Severn Vale. Sam runs up it for fun."],
@@ -294,7 +294,7 @@ const MAPS = {
       "22,23": ["FIVE VALLEYS SHOPPING CENTRE", "Home of ROUGH HANDS. Proper coffee, proper tea, and the best cake in Stroud."],
       "7,23": ["Freddie & Georgina's house. A tiny knitted jumper is drying on the gate. It's Ralph's."],
     },
-    grass: [["scarlemoth",8,11],["ramsomp",8,11],["badgerlad",9,11],["skylarky",8,10],["beechling",9,11,4],["arabicub",8,11,6],["robustling",8,11,6],["aeropuss",9,11,4],["v60wl",9,11,4],["mokapot",10,12,3],["cremagolem",11,12,1]],
+    grass: [["scarlemoth",8,11],["ramsomp",8,11],["badgerlad",9,11],["skylarky",8,10],["beechling",9,11,4],["arabicub",8,11,6],["kettlebear",9,11,4],["robustling",8,11,6],["aeropuss",9,11,4],["v60wl",9,11,4],["mokapot",10,12,3],["cremagolem",11,12,1]],
     npcs: [
       { id: "stall", x: 8, y: 13, look: "npc6", dir: "up", heal: true,
         text: ["Market stallholder: You look shattered, love. Have a cuppa on the house. Milky, two sugars. Oh, soy? Go on then.", "Your team is fully rested!"] },
@@ -409,22 +409,22 @@ const MAPS = {
     things: {
       "3,1": ["The kettle. Jaz makes Sam a builder's tea with soy milk. Your team is rested!"],
       "2,3": ["The table is covered in dog leads. There are at least nine."],
-      "9,5": ["Oswald's bed. Oswald is not in it. Oswald is wherever you don't want him to be."],
+      "9,5": ["Oswald's bed. Oswald is not in it. He's found a sunny spot by the window instead."],
     },
     npcs: [
       { id: "jk", x: 5, y: 2, look: "jaz", dir: "down", sight: 4, trainer: {
           name: "Jaz & Kim", flag: "beat_jk",
-          intro: ["Jaz: Mr Chicken. Happy birthday. The crystals told me you'd come.", "Kim: Tina? VAT? That's basically a crime. I'll allow it.", "Jaz: But first... the pets have been waiting ALL morning. Six of them. Go."],
+          intro: ["Jaz: Mr Chicken. Happy birthday. The crystals told me you'd come.", "Kim: Tina did WHAT to your VAT? Right. That's it. I'm getting my cuffs. I'm going down there to arrest her myself.", "Jaz: But first... the pets have been waiting ALL morning. Six of them. Go."],
           win: ["Kim: Okay, okay! Everybody on the sofa. ALL of you.", "Jaz: Milo and Chap have herded the cows off the lane to Selsley Common, by the way. Don't ask how.", "Kim: And Chloe's home now, by the station. She's got Winnie with her!", "Jaz: Oh, and Freddie and Georgina were looking for you. They're at Rough Hands in Stroud.", "Kim: Probably wanting to talk about Gloomhaven. Again."],
-          after: ["Jaz: Chloe first, she's by the station. Then Freddie and Georgina at Rough Hands in Stroud. The cards agree."],
+          after: ["Jaz: Chloe first, she's by the station. Then Freddie and Georgina at Rough Hands in Stroud. The cards agree.", "Jaz: And after your birthday? Ultra. You and me. The crystals say we'll smash it."],
           team: [["jkrabbit",4],["milo",4],["chap",5],["oswald",5],["lila",5],["gerty",6]], reward: 5 } },
       { id: "kim", x: 6, y: 2, look: "kim", dir: "down",
-        text: ["Kim: I'm off duty. Mostly. Sorry about the noise. And the hair. And the smell. Happy birthday though!"] },
-      { id: "milo", x: 7, y: 5, look: "milo", dir: "left", wander: true, text: ["Milo is very old and very fluffy. He creaks over and leans on Sam's leg."] },
-      { id: "chap", x: 8, y: 6, look: "chap", dir: "left", wander: true, text: ["Chap, a big black Labrador, has eaten something. Nobody knows what. He looks thrilled."] },
-      { id: "lila", x: 2, y: 5, look: "lila", dir: "right", wander: true, text: ["Lila is old, tiny and fluffy. She stares at Sam's pocket. She knows about the biscuit."] },
-      { id: "gerty", x: 8, y: 2, look: "gerty", dir: "down", wander: true, text: ["Gerty, a small black pug cross, snorts like a tiny steam engine."] },
-      { id: "oswald", x: 9, y: 1, look: "oswald", dir: "down", text: ["Oswald the sphynx cat. Hairless, wrinkly, and wearing a little jumper. He has decided."] },
+        text: ["Kim: I'm off duty. Mostly. Make yourself at home, the pets have missed you. Happy birthday!", "Kim: Still on for CrossFit this week? You, me, Freddie and Chloe. Coach Egg says it's a birthday WOD. Fear it.", "Kim: And if Tina gives you any trouble, call me. I've got handcuffs and I'm not afraid to use them."] },
+      { id: "milo", x: 7, y: 5, look: "milo", dir: "left", wander: true, text: ["Milo is very fluffy and very wise. He trots over and leans happily on Sam's leg."] },
+      { id: "chap", x: 8, y: 6, look: "chap", dir: "left", wander: true, text: ["Chap, a big black Labrador, sits beautifully and offers Sam a paw. What a gentleman."] },
+      { id: "lila", x: 2, y: 5, look: "lila", dir: "right", wander: true, text: ["Lila is tiny and fluffy. She makes a beeline for Sam and goes straight in for a kiss on the mouth. She loves the boys."] },
+      { id: "gerty", x: 8, y: 2, look: "gerty", dir: "down", wander: true, text: ["Gerty, a lovely old pug cross, snorts like a tiny steam engine and climbs onto Sam's lap for a cuddle."] },
+      { id: "oswald", x: 9, y: 1, look: "oswald", dir: "down", text: ["Oswald the sphynx cat, cosy in a little jumper. He purrs and headbutts Sam's hand."] },
       { id: "bunny", x: 1, y: 7, look: "bunny", dir: "right", text: ["The rabbit. Name unknown. It is doing box jumps onto a cushion."] },
     ],
   },
@@ -444,7 +444,7 @@ const MAPS = {
     warps: { "4,7": ["stonehouse", 27, 9] },
     things: {
       "2,1": { heal: true, text: ["Chloe's put the kettle on. Proper British tea, splash of soy for Sam.", "Your team is fully rested!"] },
-      "6,5": ["Winnie's bed. It's full of Sam's socks. She's a thief and he loves her."],
+      "6,5": ["Winnie's bed. Neat and tidy, just like her. A well-loved squirrel toy is tucked in the corner."],
     },
     npcs: [
       { id: "chloe", x: 4, y: 2, look: "chloe", dir: "down", sight: 3, trainer: {
@@ -452,7 +452,7 @@ const MAPS = {
           intro: ["Chloe: Morning, Mr Chicken! Happy birthday!", "Chloe: Winnie's been waiting for you all day. Let's see what you've got!"],
           win: ["Chloe: Not bad, Mr Chicken!", "Chloe: The trains are running again, and the road to Ebley's open.", "Chloe: Freddie and Georgina are at Rough Hands. And Tina's office is on Stroud High Street."],
           after: ["Chloe: Have fun with Winnie! Train's right outside, or walk through Ebley."],
-          team: [["owlpen",7],["cotswool",7],["winnie",9]], reward: 5 } },
+          team: [["teapotamus",7],["cotswool",7],["winnie",9]], reward: 5 } },
       { id: "winnie", x: 5, y: 2, look: "winnie", dir: "down",
         text: ["Winnie wags her tail so hard her whole body wiggles. Sam's heart melts."] },
     ],
@@ -478,7 +478,7 @@ const MAPS = {
       "5,5": ["FRAMILODE", "Where the Stroudwater Canal meets the River Severn.", "On the biggest spring tides, the Severn Bore surges UP the river from the sea. Each one gets a star rating. Five stars is the best."],
       "15,5": ["A bench facing the river. A sticker on it says 'I SURVIVED A FIVE STAR BORE'."],
     },
-    grass: [["chicklet",4,6],["fezzant",4,6],["skylarky",4,6],["heronimo",5,7,4]],
+    grass: [["chicklet",4,6],["fezzant",4,6],["skylarky",4,6],["heronimo",5,7,4],["teapotamus",5,7,3]],
     reeds: [["towpathduck",4,7],["swanky",5,7],["kingfizz",5,7],["heronimo",6,8,6]],
     npcs: [
       { id: "surfer", x: 10, y: 5, look: "surfer", dir: "up", event: "boar",
@@ -530,7 +530,7 @@ const MAPS = {
           intro: ["Freddie: SAM! Happy birthday! We've been looking for you all morning!", "Georgina: Sorry, Ralph shat on the floor again. At home. Not here. Probably.", "Freddie: Ralph and Bonnie are SO excited to see you!"],
           win: ["Freddie: Ralph's licking your shoe in defeat. He still loves you.", "Freddie: Tina's in her office on the High Street. The door's open now, I saw her go in.", "Georgina: Go get her. Then come back for cake!"],
           after: ["Freddie: Shall we go for a run sometime soon?", "Freddie: When can we play board games?", "Freddie: Can't wait to start Gloomhaven!"],
-          team: [["ralph",12],["bonnie",13]], reward: 5 } },
+          team: [["ralph",12],["owlpen",12],["bonnie",13]], reward: 5 } },
       { id: "georgina", x: 10, y: 3, look: "georgina", dir: "down",
         text: ["Georgina: I've just had my coil removed!", "Georgina: Want to see what I'm knitting? It's a jumper for Ralph. He's already eaten one sleeve."] },
       { id: "ralph", x: 8, y: 6, look: "frenchie", dir: "right", text: ["Ralph snorts at Sam. Sam snorts back. An understanding is reached."] },

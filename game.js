@@ -300,6 +300,10 @@ function typeTag(type) {
   const t = TYPES[type];
   return `<span class="tag" style="background:${t.color}">${t.name}</span>`;
 }
+const statusTag = m => {
+  const k = m.hp > 0 && (m.status || (m.conf ? "conf" : null)); if (!k) return "";
+  const st = STATUS[k]; return `<span class="st" style="background:${st.color}" title="${st.name}">${st.tag}</span>`;
+};
 function hpBar(m) {
   const max = stats(m).hp, pct = Math.max(0, m.hp / max * 100);
   const col = pct > 50 ? "#34d399" : pct > 20 ? "#fbbf24" : "#f87171";
@@ -396,7 +400,7 @@ const areaScreen = toast => WORLD.resume(toast);
 
 // ---------- healing ----------
 function healAll() {
-  [...S.team, ...S.box].forEach(m => m.hp = stats(m).hp);
+  [...S.team, ...S.box].forEach(m => { m.hp = stats(m).hp; delete m.status; delete m.sleep; delete m.conf; });
   S.balls = Math.max(S.balls, 5);
   save();
 }
@@ -409,7 +413,7 @@ function teamScreen(msg, boxFirst) {
     return `<div class="card mon">
       ${sprite(m.sp, "sm")}
       <div class="grow">
-        <b>${monName(m)}</b> Lv${m.level} ${typeTag(SPECIES[m.sp].type)}
+        <b>${monName(m)}</b> Lv${m.level} ${typeTag(SPECIES[m.sp].type)} ${statusTag(m)}
         ${hpBar(m)}<small>${m.hp}/${st.hp} HP · XP ${m.xp}/${xpNeed(m.level)}</small>
         <small class="moves">${m.moves.map(id => MOVES[id].name).join(" · ")}</small>
       </div>
@@ -561,7 +565,7 @@ function renderBattle() {
     <div class="battle" style="background:linear-gradient(180deg,${bg[0]},${bg[1]})">
       <div class="side foe">
         <div class="plate ${B.hideF ? "hidden-plate" : ""}">
-          <b>${monName(f)}</b> <span>Lv${f.level}</span> ${typeTag(SPECIES[f.sp].type)}
+          <b>${monName(f)}</b> <span>Lv${f.level}</span> ${typeTag(SPECIES[f.sp].type)} ${statusTag(f)}
           ${hpBar(f)}
           ${B.trainer ? `<small>${B.foes.map(m => m.hp > 0 ? "●" : "○").join(" ")}</small>` : ""}
         </div>
@@ -572,7 +576,7 @@ function renderBattle() {
         <div id="meSprite" class="${B.hideP ? "gone" : B.enter === "p" ? "enter-p" : ""}">${sprite(p.sp, "back")}</div>
         ${B.tP ? `<img class="pix trainer t-me" src="${WORLD.look("sam", "up").toDataURL()}" alt="Sam">` : ""}
         <div class="plate ${B.hideP ? "hidden-plate" : ""}">
-          <b>${monName(p)}</b> <span>Lv${p.level}</span> ${typeTag(SPECIES[p.sp].type)}
+          <b>${monName(p)}</b> <span>Lv${p.level}</span> ${typeTag(SPECIES[p.sp].type)} ${statusTag(p)}
           ${hpBar(p)}<small>${p.hp}/${stats(p).hp} HP</small>
           <div class="xpbar"><div style="width:${Math.min(100, p.xp / xpNeed(p.level) * 100)}%"></div></div>
         </div>
@@ -665,10 +669,11 @@ async function turn(action) {
   }
   if (action.kind === "switch") {
     say(`Come back, ${monName(p)}!`, 900); await recall("p"); await wait(400);
-    B.pi = action.i; B.stage.p = { atk: 0, def: 0, spd: 0 }; B.participants.add(me().uid);
+    delete p.conf; B.pi = action.i; B.stage.p = { atk: 0, def: 0, spd: 0 }; B.participants.add(me().uid);
     renderBattle();
     say(`Go, ${monName(me())}!`, 1000); await sendOut("p"); await wait(400);
     if (await foeAttacks()) return;
+    if (await residual()) return;
     return menu();
   }
   if (action.kind === "ball") {
@@ -676,10 +681,12 @@ async function turn(action) {
     S.balls--;
     if (await tryCatch()) return;
     if (await foeAttacks()) return;
+    if (await residual()) return;
     return menu();
   }
   // move
-  const pSpd = stats(p).spd * stageMul(B.stage.p.spd), fSpd = stats(f).spd * stageMul(B.stage.f.spd);
+  const cramp = m => m.status === "para" ? 0.5 : 1;
+  const pSpd = stats(p).spd * stageMul(B.stage.p.spd) * cramp(p), fSpd = stats(f).spd * stageMul(B.stage.f.spd) * cramp(f);
   const playerFirst = pSpd >= fSpd || (pSpd === fSpd && Math.random() < 0.5);
   if (playerFirst) {
     if (await useMove("p", action.id)) return;
@@ -688,7 +695,36 @@ async function turn(action) {
     if (await foeAttacks()) return;
     if (await useMove("p", action.id)) return;
   }
+  if (await residual()) return;
   menu();
+}
+
+// end of turn: scalds and food poisoning chip away
+async function residual() {
+  for (const side of ["p", "f"]) {
+    const m = side === "p" ? me() : foe();
+    if (!m || m.hp <= 0 || (m.status !== "burn" && m.status !== "poison")) continue;
+    const st = STATUS[m.status], dmg = Math.max(1, Math.floor(stats(m).hp / (m.status === "burn" ? 16 : 8)));
+    m.hp = Math.max(0, m.hp - dmg); sfx.hit(); renderBattleKeepMsg();
+    await say(`${side === "f" ? (B.wild ? "Wild " : "Foe ") : ""}${monName(m)} ${st.hurt}`, 900);
+    if (m.hp <= 0 && await knockedOut(side)) return true;
+  }
+  return false;
+}
+async function knockedOut(side) {
+  sfx.faint();
+  const sp = document.getElementById(side === "f" ? "foeSprite" : "meSprite"); if (sp) sp.classList.add("faint");
+  const m = side === "f" ? foe() : me(); delete m.status; delete m.conf; delete m.sleep;
+  await say(`${side === "f" ? (B.wild ? "Wild " : "Foe ") : ""}${monName(m)} fainted!`);
+  if (side === "f") await foeFainted(); else await playerFainted();
+  return true;
+}
+async function inflict(target, k, prefix) {
+  if (target.hp <= 0) return;
+  if (k === "conf") { if (target.conf) return; target.conf = 2 + Math.floor(Math.random() * 3); }
+  else { if (target.status) return; target.status = k; if (k === "sleep") target.sleep = 1 + Math.floor(Math.random() * 3); }
+  sfx.wobble(); renderBattleKeepMsg();
+  await say(`${prefix}${monName(target)} ${STATUS[k].got}`, 1000);
 }
 
 function foeChooseMove() {
@@ -708,7 +744,8 @@ const foeAttacks = () => useMove("f", foeChooseMove());
 
 // ---------- battle effects ----------
 const FX_STYLE = { fire: "rise", water: "splash", grass: "leaf", flying: "streak", fighting: "impact", psychic: "ring",
-  dark: "shadow", ghost: "wisp", dragon: "rise", normal: "impact" };
+  dark: "shadow", ghost: "wisp", dragon: "rise", normal: "impact",
+  electric: "streak", ground: "impact", rock: "impact", steel: "impact", poison: "wisp", fairy: "ring" };
 function moveFx(type, el, big) {
   if (!el) return;
   const r = el.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
@@ -816,6 +853,24 @@ async function useMove(who, id) {
   const atkEl = document.getElementById(who === "p" ? "meSprite" : "foeSprite");
   if (atkEl) { atkEl.className = ""; void atkEl.offsetWidth; atkEl.classList.add(mv.power ? (who === "p" ? "lunge-p" : "lunge-f") : "buff");
     setTimeout(() => atkEl.classList.remove("lunge-p", "lunge-f", "buff"), 600); }
+  // naps, cramp and jitters can stop a move
+  if (atkM.status === "sleep") {
+    if (--atkM.sleep > 0) { await say(`${prefix}${monName(atkM)} ${STATUS.sleep.stuck}`, 1000); return false; }
+    delete atkM.status; delete atkM.sleep; renderBattleKeepMsg(); await say(`${prefix}${monName(atkM)} woke up!`, 900);
+  }
+  if (atkM.status === "para" && Math.random() < 0.25) { await say(`${prefix}${monName(atkM)} ${STATUS.para.stuck}`, 1000); return false; }
+  if (atkM.conf) {
+    if (--atkM.conf <= 0) { delete atkM.conf; renderBattleKeepMsg(); await say(`${prefix}${monName(atkM)}'s jitters wore off.`, 900); }
+    else {
+      await say(`${prefix}${monName(atkM)} has the coffee jitters!`, 800);
+      if (Math.random() < 0.33) {
+        atkM.hp = Math.max(0, atkM.hp - Math.max(1, Math.floor(stats(atkM).hp / 8))); sfx.hit(); renderBattleKeepMsg();
+        await say("It spilled coffee all over itself!", 900);
+        if (atkM.hp <= 0) return knockedOut(who);
+        return false;
+      }
+    }
+  }
   await say(`${prefix}${monName(atkM)} used ${mv.name}!`, 900);
 
   if (Math.random() * 100 > mv.acc) { await say("But it missed!"); return false; }
@@ -828,6 +883,8 @@ async function useMove(who, id) {
     } else if (mv.effect === "atkUp") { aSt.atk = Math.min(6, aSt.atk + 1); sfx.level(); await say(`${monName(atkM)}'s attack rose!`); }
     else if (mv.effect === "spdUp") { aSt.spd = Math.min(6, aSt.spd + 1); await say(`${monName(atkM)} got faster!`); }
     else if (mv.effect === "defDown") { dSt.def = Math.max(-6, dSt.def - 1); sfx.wobble(); moveFx(mv.type, document.getElementById(who === "p" ? "foeSprite" : "meSprite")); await say(`${monName(defM)}'s defence fell!`); }
+    const ms = MOVE_STATUS[id];
+    if (ms && Math.random() * 100 < ms[1]) await inflict(defM, ms[0], who === "p" ? (B.wild ? "Wild " : "Foe ") : "");
     return false;
   }
 
@@ -836,7 +893,8 @@ async function useMove(who, id) {
   const stab = mv.type === SPECIES[atkM.sp].type ? 1.5 : 1;
   const crit = Math.random() < 0.0625 ? 1.5 : 1;
   const easy = who === "f" ? 0.85 : 1; // a little birthday mercy
-  let dmg = ((2 * atkM.level / 5 + 2) * mv.power * (as.atk * stageMul(aSt.atk)) / (ds.def * stageMul(dSt.def))) / 50 + 2;
+  const scald = atkM.status === "burn" ? 0.5 : 1;
+  let dmg = ((2 * atkM.level / 5 + 2) * mv.power * (as.atk * stageMul(aSt.atk) * scald) / (ds.def * stageMul(dSt.def))) / 50 + 2;
   dmg = Math.max(1, Math.floor(dmg * stab * eff * crit * easy * (0.85 + Math.random() * 0.15)));
   defM.hp = Math.max(0, defM.hp - dmg);
 
@@ -854,11 +912,14 @@ async function useMove(who, id) {
     sfx.faint();
     const sp = document.getElementById(who === "p" ? "foeSprite" : "meSprite");
     if (sp) sp.classList.add("faint");
+    delete defM.status; delete defM.sleep; delete defM.conf;
     await say(`${who === "p" ? prefix || (B.wild ? "Wild " : "Foe ") : ""}${monName(defM)} fainted!`);
     if (who !== "p" && !S.flags.healtip) S.flags.healtipDue = true;
     if (who === "p") await foeFainted(); else await playerFainted();
     return true;
   }
+  const ms = MOVE_STATUS[id];
+  if (ms && Math.random() * 100 < ms[1]) await inflict(defM, ms[0], who === "p" ? (B.wild ? "Wild " : "Foe ") : "");
   return false;
 }
 
@@ -884,7 +945,11 @@ async function tryCatch() {
   if (el) { const under = el.querySelector(".sprite .f1")?.src || pixURL(f.sp, 0);
     el.innerHTML = `<div class="ball-anim cover"><img class="pix under" src="${under}" alt="">${mugImg("inv")}</div>`; }
   await new Promise(r => setTimeout(r, 600));
-  const chance = rate * (1.15 - 0.85 * f.hp / max);
+  // lower HP helps, and so does your critter being much higher level (up to double at 10+ levels above)
+  const lvl = Math.min(2, Math.max(1, 1 + (me().level - f.level) / 10));
+  // a napping critter is much easier to cover; cramp, scalds and food poisoning help a bit
+  const stb = f.status === "sleep" ? 2 : f.status ? 1.5 : 1;
+  const chance = rate * (1.15 - 0.85 * f.hp / max) * lvl * stb;
   const ok = Math.random() < chance;
   const wobbles = ok ? 3 : rnd(0, 2);
   for (let i = 0; i < wobbles; i++) { sfx.wobble(); el?.firstChild?.classList.add("wob"); await say("...".slice(0, i + 1), 600); el?.firstChild?.classList.remove("wob"); }
@@ -894,6 +959,7 @@ async function tryCatch() {
     sfx.catch(); sparkle(el);
     await say(`Gotcha! ${monName(f)} was caught!`);
     S.caught[f.sp] = true;
+    if (f.sp === "severnboar") S.flags.boar = true;
     f.uid = S.uid++;
     if (S.team.length < MAX_TEAM) S.team.push(f);
     else { S.box.push(f); await say(`Your team is full, so ${monName(f)} went to the Box.`); }
@@ -968,6 +1034,7 @@ async function playerFainted() {
 
 async function endBattle(result) {
   const trainer = B.trainer;
+  for (const m of S.team) delete m.conf;
   for (const m of S.team) {
     let ev;
     while ((ev = SPECIES[m.sp].evolve) && m.level >= ev.at && m.hp > 0) await evolve(m, ev.into);
@@ -1016,7 +1083,7 @@ function evolve(m, into) {
 const CREDITS = [
   { look: "sam", name: "Sam (Mr Chicken)", line: "The birthday boy. 36 today. Still hates wall balls." },
   { look: "chloe", name: "Chloe", line: "Calls him Mr Chicken. Knows exactly why." },
-  { sp: "winnieeee", name: "Winnie", line: "Very good girl. Very loud girl." },
+  { sp: "winnieeee", name: "Winnie", line: "The best girl. Little yaps of joy." },
   { sp: "lucius", name: "Lucy", line: "Fluffy. Fiery. Sleeps on the warm laptop." },
   { sp: "spookus", name: "Spooks", line: "Professional play-fighter." },
   { sp: "marigoldus", name: "Marie", line: "Professional play-fight referee." },
@@ -1024,13 +1091,13 @@ const CREDITS = [
   { look: "georgina", name: "Georgina", line: "Want to see what I'm knitting?" },
   { sp: "ralph", name: "Ralph", line: "Sorry about the floor." },
   { sp: "bonnie", name: "Bonnie", line: "Went mental for no reason. Twice." },
-  { look: "jaz", name: "Jaz", line: "Witchy powers, perfect fringe." },
-  { look: "kim", name: "Kim", line: "Off duty. Mostly." },
-  { sp: "chap", name: "Chap", line: "Ate the credits. Then the cake." },
-  { sp: "milo", name: "Milo & Lila", line: "Old, fluffy and unbothered." },
-  { sp: "gerty", name: "Gerty", line: "Snorts in 4/4 time." },
-  { sp: "oswald", name: "Oswald", line: "No fur. All attitude." },
-  { sp: "jkrabbit", name: "Name Unknown", line: "Still won't say." },
+  { look: "jaz", name: "Jaz", line: "Fun witchy vibes, ultra-running legs." },
+  { look: "kim", name: "Kim", line: "Off duty. Mostly. Never skips a WOD." },
+  { sp: "chap", name: "Chap", line: "A gentleman and a very good boy." },
+  { sp: "milo", name: "Milo & Lila", line: "Fluffy, wise and adorable." },
+  { sp: "gerty", name: "Gerty", line: "Lovely old girl. Professional cuddler." },
+  { sp: "oswald", name: "Oswald", line: "No fur. All charm." },
+  { sp: "jkrabbit", name: "Name Unknown", line: "Name: top secret." },
   { look: "brendan", name: "Brendan & Davide", line: "Gloomhaven, scenario three, attempt fifteen." },
   { look: "egg", name: "Coach Egg", line: "50 wall balls. For time. See you at 6am." },
   { look: "prof", name: "Prof. Doverow", line: "Gave you a name. You're welcome." },
