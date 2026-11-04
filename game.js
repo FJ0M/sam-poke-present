@@ -708,7 +708,8 @@ const foeAttacks = () => useMove("f", foeChooseMove());
 
 // ---------- battle effects ----------
 const FX_STYLE = { fire: "rise", water: "splash", grass: "leaf", flying: "streak", fighting: "impact", psychic: "ring",
-  dark: "shadow", ghost: "wisp", dragon: "rise", normal: "impact" };
+  dark: "shadow", ghost: "wisp", dragon: "rise", normal: "impact",
+  electric: "streak", ground: "impact", rock: "impact", steel: "impact", poison: "wisp", fairy: "ring" };
 function moveFx(type, el, big) {
   if (!el) return;
   const r = el.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
@@ -1016,7 +1017,7 @@ function evolve(m, into) {
 const CREDITS = [
   { look: "sam", name: "Sam (Mr Chicken)", line: "The birthday boy. 36 today. Still hates wall balls." },
   { look: "chloe", name: "Chloe", line: "Calls him Mr Chicken. Knows exactly why." },
-  { sp: "winnieeee", name: "Winnie", line: "Very good girl. Very loud girl." },
+  { sp: "winnieeee", name: "Winnie", line: "The best girl. Little yaps of joy." },
   { sp: "lucius", name: "Lucy", line: "Fluffy. Fiery. Sleeps on the warm laptop." },
   { sp: "spookus", name: "Spooks", line: "Professional play-fighter." },
   { sp: "marigoldus", name: "Marie", line: "Professional play-fight referee." },
@@ -1024,13 +1025,13 @@ const CREDITS = [
   { look: "georgina", name: "Georgina", line: "Want to see what I'm knitting?" },
   { sp: "ralph", name: "Ralph", line: "Sorry about the floor." },
   { sp: "bonnie", name: "Bonnie", line: "Went mental for no reason. Twice." },
-  { look: "jaz", name: "Jaz", line: "Witchy powers, perfect fringe." },
-  { look: "kim", name: "Kim", line: "Off duty. Mostly." },
-  { sp: "chap", name: "Chap", line: "Ate the credits. Then the cake." },
-  { sp: "milo", name: "Milo & Lila", line: "Old, fluffy and unbothered." },
-  { sp: "gerty", name: "Gerty", line: "Snorts in 4/4 time." },
-  { sp: "oswald", name: "Oswald", line: "No fur. All attitude." },
-  { sp: "jkrabbit", name: "Name Unknown", line: "Still won't say." },
+  { look: "jaz", name: "Jaz", line: "Fun witchy vibes, ultra-running legs." },
+  { look: "kim", name: "Kim", line: "Off duty. Mostly. Never skips a WOD." },
+  { sp: "chap", name: "Chap", line: "A gentleman and a very good boy." },
+  { sp: "milo", name: "Milo & Lila", line: "Fluffy, wise and adorable." },
+  { sp: "gerty", name: "Gerty", line: "Lovely old girl. Professional cuddler." },
+  { sp: "oswald", name: "Oswald", line: "No fur. All charm." },
+  { sp: "jkrabbit", name: "Name Unknown", line: "Name: top secret." },
   { look: "brendan", name: "Brendan & Davide", line: "Gloomhaven, scenario three, attempt fifteen." },
   { look: "egg", name: "Coach Egg", line: "50 wall balls. For time. See you at 6am." },
   { look: "prof", name: "Prof. Doverow", line: "Gave you a name. You're welcome." },
