@@ -394,3 +394,6 @@ small { display: block; opacity: .75; font-size: .8rem; }
 .trophy i { font-style: normal; font-size: 20px; line-height: 28px; }
 .trophy small { font-size: 9px; }
 .intro .btn small { display: block; font-size: 9px; opacity: .8; margin-top: 2px; }
+
+/* status effects: Scalded, Food Poisoning, Cramp, Nap, Jitters */
+.st { display: inline-block; padding: 1px 4px; border: 2px solid #1b1530; border-radius: 4px; color: #fff; font-size: 9px; line-height: 1.2; vertical-align: middle; text-shadow: 1px 1px 0 #1b1530; }

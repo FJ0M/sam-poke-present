@@ -198,6 +198,26 @@ const LUCE_MOVES  = [[1,"ember-glare"],[1,"jog-on"],[4,"second-wind"],[9,"fluff-
 const SPOOK_MOVES = [[1,"play-fight"],[1,"midnight-hiss"],[4,"judgy-stare"],[9,"shadow-pounce"],[13,"cat-nap"],[17,"witching-hour"]];
 const MARIE_MOVES = [[1,"play-fight"],[1,"mind-purr"],[4,"cat-nap"],[9,"third-eye"],[13,"chicken-dance"],[17,"purrnormal"]];
 
+// ---------- status effects (classic five, local names) ----------
+// burn = Scalded, poison = Food Poisoning, para = Cramp, sleep = Nap, conf = Jitters (too much coffee)
+const STATUS = {
+  burn:   { name: "Scalded",        tag: "SCALD", color: "#f97316", got: "got scalded!",           hurt: "is hurt by the scald!" },
+  poison: { name: "Food Poisoning", tag: "SICK",  color: "#84cc16", got: "got food poisoning!",     hurt: "feels queasy..." },
+  para:   { name: "Cramp",          tag: "CRAMP", color: "#eab308", got: "got a cramp!",            stuck: "has cramp and can't move!" },
+  sleep:  { name: "Nap",            tag: "NAP",   color: "#818cf8", got: "dozed off for a nap!",    stuck: "is having a nap." },
+  conf:   { name: "Jitters",        tag: "JITTERS", color: "#a16207", got: "got the coffee jitters!" },
+};
+// move id -> [status, % chance]. Damaging moves roll after a hit; status moves roll when they land.
+const MOVE_STATUS = {
+  "hot-sip": ["burn", 20], "moka-steam": ["burn", 30], "builders-brew": ["burn", 20], "birthday-blaze": ["burn", 20],
+  "ember-glare": ["burn", 10], "fluff-flare": ["burn", 10], "inferno-zoomies": ["burn", 10], "scarlet-blaze": ["burn", 10],
+  "fart": ["poison", 30], "poo": ["poison", 40], "wild-garlic": ["poison", 20],
+  "static-fleece": ["para", 20], "wool-shock": ["para", 30], "ultra-marathon": ["para", 10], "deadlift": ["para", 10], "red-tape": ["para", 50],
+  "mind-purr": ["sleep", 25], "hex": ["sleep", 15], "purrnormal": ["sleep", 10], "decaf": ["sleep", 40],
+  "espresso-shot": ["conf", 30], "ristretto": ["conf", 30], "over-extract": ["conf", 30], "single-origin": ["conf", 10],
+  "flat-white": ["conf", 10], "audit": ["conf", 30], "decimal-error": ["conf", 20],
+};
+
 const SPECIES = {
   // --- Sam's cats: you get all three ---
   luce:     sp("Luce", "🐈", "fire", [44,55,42,66], 55, 0, LUCE_MOVES, { evolve: { at: 12, into: "lucy" },
